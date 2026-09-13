@@ -1,66 +1,86 @@
 import 'package:business_management_kh/features/home/controllers/home_controller.dart';
 import 'package:business_management_kh/features/home/home_model/home_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'edit_store_info_view.dart';
 import '../../supplier/supplier_views/supplier_view.dart';
 import '../../purchase/purchase_views/purchase_view.dart';
+import '../../expense/expense_views/expense_view.dart';
+import '../../debt/debt_views/debt_view.dart';
+import '../../reports/reports_views/reports_view.dart';
+import '../../member/member_views/member_view.dart';
+import '../../../services/api_service.dart';
 
-class MoreView extends ConsumerStatefulWidget {
+class MoreView extends StatefulWidget {
   const MoreView({super.key});
 
   @override
-  ConsumerState<MoreView> createState() => _MoreViewState();
+  State<MoreView> createState() => _MoreViewState();
 }
 
-class _MoreViewState extends ConsumerState<MoreView> {
+class _MoreViewState extends State<MoreView> {
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(homeProvider);
+    final homeController = Get.isRegistered<HomeController>()
+        ? Get.find<HomeController>()
+        : Get.put(HomeController());
 
-    if (state.isLoading || state.homeData == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-      );
-    }
+    return Obx(() {
+      final data = homeController.homeData.value;
+      if (homeController.isLoading.value && data == null) {
+        return const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+        );
+      }
 
-    final data = state.homeData!;
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(context),
-              const SizedBox(height: 16),
+      if (data == null) {
+        return const Center(child: Text('គ្មានទិន្នន័យ'));
+      }
 
-              // Store Card
-              _buildStoreCard(context, data),
-              const SizedBox(height: 20),
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context),
+                const SizedBox(height: 14),
 
-              // Section 1: គ្រប់គ្រងវត្តភាព
-              _buildSectionTitle('គ្រប់គ្រងវត្តភាព'),
-              const SizedBox(height: 8),
-              _buildManagementCard(context),
-              const SizedBox(height: 20),
+                // User Profile Card
+                _buildUserProfileCard(),
+                const SizedBox(height: 12),
 
-              // Section 2: ការកំណត់ និងជំនួយ
-              _buildSectionTitle('ការកំណត់ និងជំនួយ'),
-              const SizedBox(height: 8),
-              _buildSettingsCard(),
-              const SizedBox(height: 24),
+                // Store Card
+                _buildStoreCard(context, data),
+                const SizedBox(height: 20),
 
-              // Logout Button
-              _buildLogoutButton(context),
-              const SizedBox(height: 24),
-            ],
+                // Section 1: គ្រប់គ្រងវត្តភាព
+                _buildSectionTitle('គ្រប់គ្រងវត្តភាព'),
+                const SizedBox(height: 8),
+                _buildManagementCard(context),
+                const SizedBox(height: 20),
+
+                // Section 2: ការកំណត់ និងជំនួយ
+                _buildSectionTitle('ការកំណត់ និងជំនួយ'),
+                const SizedBox(height: 8),
+                _buildSettingsCard(),
+                const SizedBox(height: 24),
+
+                // Logout Button
+                _buildLogoutButton(context),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -102,6 +122,84 @@ class _MoreViewState extends ConsumerState<MoreView> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildUserProfileCard() {
+    final user = ApiService.instance.currentUser;
+    final userName = user?['name']?.toString() ?? 'គណនីរបស់ខ្ញុំ';
+    final userEmail = user?['email']?.toString() ?? user?['phone']?.toString() ?? '';
+    final userId = user?['id'];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+            child: const Icon(Icons.person, color: Color(0xFF2E7D32), size: 28),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (userId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E7D32),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'User ID: #$userId',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (userEmail.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    userEmail,
+                    style: TextStyle(fontSize: 12.5, color: Colors.grey[600]),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -205,23 +303,37 @@ class _MoreViewState extends ConsumerState<MoreView> {
               );
             },
           ),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.people_outline,
             title: 'បុគ្គលិក',
-            onTap: () {},
-          ),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
-          _buildMenuItem(
-            icon: Icons.grid_view_outlined,
-            title: 'ប្រភេទ',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MemberView()),
+              );
+            },
           ),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.credit_card_outlined,
-            title: 'ចំណាយ',
-            onTap: () {},
+            title: 'ចំណាយ (Expenses)',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ExpenseView()),
+              );
+            },
+          ),
+          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
+          _buildMenuItem(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'បំណុល (Debts)',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DebtView()),
+              );
+            },
           ),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
@@ -230,9 +342,7 @@ class _MoreViewState extends ConsumerState<MoreView> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SupplierView(),
-                ),
+                MaterialPageRoute(builder: (context) => const SupplierView()),
               );
             },
           ),
@@ -243,17 +353,20 @@ class _MoreViewState extends ConsumerState<MoreView> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const PurchaseView(),
-                ),
+                MaterialPageRoute(builder: (context) => const PurchaseView()),
               );
             },
           ),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.bar_chart_rounded,
-            title: 'របាយការណ៍',
-            onTap: () {},
+            title: 'របាយការណ៍ (Reports)',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReportsView()),
+              );
+            },
             isLast: true,
           ),
         ],

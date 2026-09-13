@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../supplier_controllers/supplier_controller.dart';
 import '../supplier_models/supplier_model.dart';
 
-class SupplierView extends ConsumerStatefulWidget {
+class SupplierView extends StatefulWidget {
   const SupplierView({super.key});
 
   @override
-  ConsumerState<SupplierView> createState() => _SupplierViewState();
+  State<SupplierView> createState() => _SupplierViewState();
 }
 
-class _SupplierViewState extends ConsumerState<SupplierView> {
+class _SupplierViewState extends State<SupplierView> {
   final TextEditingController _searchController = TextEditingController();
+
+  SupplierController get controller => Get.isRegistered<SupplierController>()
+      ? Get.find<SupplierController>()
+      : Get.put(SupplierController());
 
   static const List<Color> _avatarColors = [
     Color(0xFFBBDEFB), // Blue 100
@@ -32,7 +36,8 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
 
   @override
   Widget build(BuildContext context) {
-    final supplierState = ref.watch(supplierProvider);
+    return Obx(() {
+      final supplierState = controller.state;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -56,7 +61,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
             icon: const Icon(Icons.refresh, color: Colors.black87),
             tooltip: 'ទាញយកទិន្នន័យឡើងវិញ',
             onPressed: () {
-              ref.read(supplierProvider.notifier).loadSuppliers();
+              controller.loadSuppliers();
             },
           ),
           Padding(
@@ -81,9 +86,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
         child: RefreshIndicator(
           color: const Color(0xFF4CAF50),
           onRefresh: () async {
-            await ref
-                .read(supplierProvider.notifier)
-                .loadSuppliers(showLoading: false);
+            await controller.loadSuppliers(showLoading: false);
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -125,6 +128,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
         ),
       ),
     );
+    });
   }
 
   Widget _buildSummaryCard(SupplierState state) {
@@ -190,7 +194,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
       child: TextField(
         controller: _searchController,
         onChanged: (val) {
-          ref.read(supplierProvider.notifier).setSearchQuery(val);
+          controller.setSearchQuery(val);
         },
         decoration: InputDecoration(
           hintText: 'ស្វែងរកតាមឈ្មោះ លេខទូរស័ព្ទ អ៊ីមែល...',
@@ -201,7 +205,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                   icon: Icon(Icons.clear, color: Colors.grey.shade400, size: 18),
                   onPressed: () {
                     _searchController.clear();
-                    ref.read(supplierProvider.notifier).setSearchQuery('');
+                    controller.setSearchQuery('');
                     setState(() {});
                   },
                 )
@@ -413,7 +417,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                ref.read(supplierProvider.notifier).loadSuppliers();
+                controller.loadSuppliers();
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('ព្យាយាមម្តងទៀត'),
@@ -556,8 +560,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                                   );
 
                                   setModalState(() => isSubmitting = true);
-                                  final success = await ref
-                                      .read(supplierProvider.notifier)
+                                  final success = await controller
                                       .createSupplier(newSupplier);
 
                                   if (!bottomSheetContext.mounted) return;
@@ -574,9 +577,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                                     );
                                   } else {
                                     if (!context.mounted) return;
-                                    final err = ref
-                                            .read(supplierProvider)
-                                            .errorMessage ??
+                                    final err = controller.errorMessage.value ??
                                         'បរាជ័យក្នុងការបន្ថែមអ្នកផ្គត់ផ្គង់';
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -797,8 +798,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                                   );
 
                                   setModalState(() => isSubmitting = true);
-                                  final success = await ref
-                                      .read(supplierProvider.notifier)
+                                  final success = await controller
                                       .updateSupplier(supplier.id, updateData);
 
                                   if (!bottomSheetContext.mounted) return;
@@ -816,9 +816,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                                     );
                                   } else {
                                     if (!context.mounted) return;
-                                    final err = ref
-                                            .read(supplierProvider)
-                                            .errorMessage ??
+                                    final err = controller.errorMessage.value ??
                                         'បរាជ័យក្នុងការកែប្រែព័ត៌មានអ្នកផ្គត់ផ្គង់';
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -883,8 +881,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
               ),
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                final success = await ref
-                    .read(supplierProvider.notifier)
+                final success = await controller
                     .deleteSupplier(supplier.id);
 
                 if (!context.mounted) return;
@@ -896,7 +893,7 @@ class _SupplierViewState extends ConsumerState<SupplierView> {
                     ),
                   );
                 } else {
-                  final err = ref.read(supplierProvider).errorMessage ??
+                  final err = controller.errorMessage.value ??
                       'បរាជ័យក្នុងការលុបអ្នកផ្គត់ផ្គង់';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

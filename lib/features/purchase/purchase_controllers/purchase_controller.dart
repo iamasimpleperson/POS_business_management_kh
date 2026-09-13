@@ -1,91 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../../stock/stock_model/stock_model.dart';
 import '../../supplier/supplier_models/supplier_model.dart';
 import '../purchase_models/purchase_model.dart';
 import '../../../services/api_service.dart';
 
-class PurchaseState {
-  final List<ProductModel> allProducts;
-  final List<ProductModel> filteredProducts;
-  final List<SupplierModel> suppliers;
-  final int? selectedSupplierId;
-  final List<PurchaseCartItem> cartItems;
-  final List<PurchaseResponse> history;
-  final String searchQuery;
-  final bool isLoading;
-  final bool isSubmitting;
-  final String? errorMessage;
+class PurchaseController extends GetxController {
+  var allProducts = <ProductModel>[].obs;
+  var filteredProducts = <ProductModel>[].obs;
+  var suppliers = <SupplierModel>[].obs;
+  var selectedSupplierId = RxnInt();
+  var cartItems = <PurchaseCartItem>[].obs;
+  var history = <PurchaseResponse>[].obs;
+  var searchQuery = ''.obs;
+  var isLoading = true.obs;
+  var isSubmitting = false.obs;
+  var errorMessage = RxnString();
 
-  PurchaseState({
-    this.allProducts = const [],
-    this.filteredProducts = const [],
-    this.suppliers = const [],
-    this.selectedSupplierId,
-    this.cartItems = const [],
-    this.history = const [],
-    this.searchQuery = '',
-    this.isLoading = true,
-    this.isSubmitting = false,
-    this.errorMessage,
-  });
+  double get subtotal => cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+  int get totalItemCount => cartItems.fold(0, (sum, item) => sum + item.quantity.toInt());
 
-  PurchaseState copyWith({
-    List<ProductModel>? allProducts,
-    List<ProductModel>? filteredProducts,
-    List<SupplierModel>? suppliers,
-    int? selectedSupplierId,
-    List<PurchaseCartItem>? cartItems,
-    List<PurchaseResponse>? history,
-    String? searchQuery,
-    bool? isLoading,
-    bool? isSubmitting,
-    String? errorMessage,
-  }) {
-    return PurchaseState(
-      allProducts: allProducts ?? this.allProducts,
-      filteredProducts: filteredProducts ?? this.filteredProducts,
-      suppliers: suppliers ?? this.suppliers,
-      selectedSupplierId: selectedSupplierId ?? this.selectedSupplierId,
-      cartItems: cartItems ?? this.cartItems,
-      history: history ?? this.history,
-      searchQuery: searchQuery ?? this.searchQuery,
-      isLoading: isLoading ?? this.isLoading,
-      isSubmitting: isSubmitting ?? this.isSubmitting,
-      errorMessage: errorMessage,
-    );
-  }
-
-  double get subtotal {
-    final items = cartItems;
-    return items.fold(0.0, (sum, item) => sum + item.totalPrice);
-  }
-
-  int get totalItemCount {
-    final items = cartItems;
-    return items.fold(0, (sum, item) => sum + item.quantity.toInt());
-  }
-}
-
-class PurchaseNotifier extends Notifier<PurchaseState> {
   @override
-  PurchaseState build() {
-    Future.microtask(() => loadData());
-    return PurchaseState();
+  void onInit() {
+    super.onInit();
+    loadData();
   }
 
   Future<void> loadData() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    isLoading.value = true;
+    errorMessage.value = null;
 
     if (!ApiService.instance.isAuthenticated) {
-      state = state.copyWith(isLoading: false);
+      isLoading.value = false;
       return;
     }
 
     try {
       // 1. Fetch suppliers
       final suppRes = await ApiService.instance.getSuppliers();
-      final List<SupplierModel> suppliers =
+      final List<SupplierModel> loadedSuppliers =
           (suppRes.success && suppRes.data != null) ? suppRes.data! : [];
 
       // 2. Fetch products
@@ -120,53 +73,51 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
 
       // 3. Fetch purchase history
       final historyRes = await ApiService.instance.getPurchases();
-      final List<PurchaseResponse> history =
+      final List<PurchaseResponse> loadedHistory =
           (historyRes.success && historyRes.data != null) ? historyRes.data! : [];
 
-      state = state.copyWith(
-        isLoading: false,
-        allProducts: products,
-        filteredProducts: products,
-        suppliers: suppliers,
-        history: history,
-      );
+      suppliers.assignAll(loadedSuppliers);
+      allProducts.assignAll(products);
+      filteredProducts.assignAll(products);
+      history.assignAll(loadedHistory);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'មានបញ្ហាក្នុងការទាញយកទិន្នន័យ: $e',
-      );
+      errorMessage.value = 'មានបញ្ហាក្នុងការទាញយកទិន្នន័យ: $e';
+    } finally {
+      isLoading.value = false;
     }
   }
 
   void selectSupplier(int? supplierId) {
-    state = state.copyWith(selectedSupplierId: supplierId);
+    selectedSupplierId.value = supplierId;
   }
 
   void updateSearch(String query) {
+    searchQuery.value = query;
     final clean = query.trim().toLowerCase();
-    List<ProductModel> filtered = state.allProducts;
-    if (clean.isNotEmpty) {
-      filtered = filtered
-          .where(
-            (p) =>
-                p.name.toLowerCase().contains(clean) ||
-                p.code.toLowerCase().contains(clean),
-          )
-          .toList();
+    if (clean.isEmpty) {
+      filteredProducts.assignAll(allProducts);
+      return;
     }
-    state = state.copyWith(searchQuery: query, filteredProducts: filtered);
+
+    final filtered = allProducts
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(clean) ||
+              p.code.toLowerCase().contains(clean),
+        )
+        .toList();
+
+    filteredProducts.assignAll(filtered);
   }
 
   void addToCart(ProductModel product, {double? customCost}) {
-    final items = List<PurchaseCartItem>.from(state.cartItems);
-    final idx = items.indexWhere((i) => i.product.id == product.id);
-
+    final idx = cartItems.indexWhere((i) => i.product.id == product.id);
     final cost = customCost ?? (product.costPrice > 0 ? product.costPrice : product.price);
 
     if (idx >= 0) {
-      items[idx] = items[idx].copyWith(quantity: items[idx].quantity + 1.0);
+      cartItems[idx] = cartItems[idx].copyWith(quantity: cartItems[idx].quantity + 1.0);
     } else {
-      items.add(
+      cartItems.add(
         PurchaseCartItem(
           product: product,
           quantity: 1.0,
@@ -174,60 +125,48 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
         ),
       );
     }
-
-    state = state.copyWith(cartItems: items);
   }
 
   void updateQuantity(String productId, double delta) {
-    final items = List<PurchaseCartItem>.from(state.cartItems);
-    final idx = items.indexWhere((i) => i.product.id == productId);
+    final idx = cartItems.indexWhere((i) => i.product.id == productId);
 
     if (idx >= 0) {
-      final newQty = items[idx].quantity + delta;
+      final newQty = cartItems[idx].quantity + delta;
       if (newQty <= 0) {
-        items.removeAt(idx);
+        cartItems.removeAt(idx);
       } else {
-        items[idx] = items[idx].copyWith(quantity: newQty);
+        cartItems[idx] = cartItems[idx].copyWith(quantity: newQty);
       }
-      state = state.copyWith(cartItems: items);
     }
   }
 
   void setQuantity(String productId, double quantity) {
-    final items = List<PurchaseCartItem>.from(state.cartItems);
-    final idx = items.indexWhere((i) => i.product.id == productId);
+    final idx = cartItems.indexWhere((i) => i.product.id == productId);
 
     if (idx >= 0) {
       if (quantity <= 0) {
-        items.removeAt(idx);
+        cartItems.removeAt(idx);
       } else {
-        items[idx] = items[idx].copyWith(quantity: quantity);
+        cartItems[idx] = cartItems[idx].copyWith(quantity: quantity);
       }
-      state = state.copyWith(cartItems: items);
     }
   }
 
   void updateCostPrice(String productId, double costPrice) {
-    final items = List<PurchaseCartItem>.from(state.cartItems);
-    final idx = items.indexWhere((i) => i.product.id == productId);
+    final idx = cartItems.indexWhere((i) => i.product.id == productId);
 
     if (idx >= 0) {
-      items[idx] = items[idx].copyWith(costPrice: costPrice);
-      state = state.copyWith(cartItems: items);
+      cartItems[idx] = cartItems[idx].copyWith(costPrice: costPrice);
     }
   }
 
   void removeFromCart(String productId) {
-    final items =
-        state.cartItems.where((i) => i.product.id != productId).toList();
-    state = state.copyWith(cartItems: items);
+    cartItems.removeWhere((i) => i.product.id != productId);
   }
 
   void clearCart() {
-    state = state.copyWith(
-      cartItems: [],
-      selectedSupplierId: null,
-    );
+    cartItems.clear();
+    selectedSupplierId.value = null;
   }
 
   /// Create purchase
@@ -237,18 +176,19 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     double? paidAmount,
     DateTime? purchaseDate,
   }) async {
-    if (state.cartItems.isEmpty) return null;
+    if (cartItems.isEmpty) return null;
 
-    state = state.copyWith(isSubmitting: true, errorMessage: null);
+    isSubmitting.value = true;
+    errorMessage.value = null;
 
-    final sId = supplierId ?? state.selectedSupplierId;
-    final total = state.subtotal;
+    final sId = supplierId ?? selectedSupplierId.value;
+    final total = subtotal;
     final paid = paidAmount ?? total;
     final invoice = invoiceNo?.trim().isNotEmpty == true
         ? invoiceNo!.trim()
         : 'PO-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
-    final items = state.cartItems.map((c) {
+    final items = cartItems.map((c) {
       final pId = int.tryParse(c.product.id) ?? 0;
       return PurchaseItemCreate(
         productId: pId,
@@ -269,28 +209,67 @@ class PurchaseNotifier extends Notifier<PurchaseState> {
     try {
       final response =
           await ApiService.instance.createPurchase(purchase: payload);
-      state = state.copyWith(isSubmitting: false);
+      isSubmitting.value = false;
 
       if (response.success && response.data != null) {
         clearCart();
-        // Refresh products and history
         loadData();
         return response.data;
       } else {
-        state = state.copyWith(
-          errorMessage: response.error ?? 'បរាជ័យក្នុងការបង្កើតការទិញចូល',
-        );
+        errorMessage.value = response.error ?? 'បរាជ័យក្នុងការបង្កើតការទិញចូល';
         return null;
       }
     } catch (e) {
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage: 'កំហុសក្នុងការបង្កើតការទិញចូល: $e',
-      );
+      isSubmitting.value = false;
+      errorMessage.value = 'កំហុសក្នុងការបង្កើតការទិញចូល: $e';
       return null;
     }
   }
+
+  PurchaseState get state => PurchaseState(
+        allProducts: allProducts,
+        filteredProducts: filteredProducts,
+        suppliers: suppliers,
+        selectedSupplierId: selectedSupplierId.value,
+        cartItems: cartItems,
+        history: history,
+        searchQuery: searchQuery.value,
+        isLoading: isLoading.value,
+        isSubmitting: isSubmitting.value,
+        errorMessage: errorMessage.value,
+        subtotal: subtotal,
+        totalItemCount: totalItemCount,
+      );
 }
 
-final purchaseProvider =
-    NotifierProvider<PurchaseNotifier, PurchaseState>(() => PurchaseNotifier());
+typedef PurchaseNotifier = PurchaseController;
+
+class PurchaseState {
+  final List<ProductModel> allProducts;
+  final List<ProductModel> filteredProducts;
+  final List<SupplierModel> suppliers;
+  final int? selectedSupplierId;
+  final List<PurchaseCartItem> cartItems;
+  final List<PurchaseResponse> history;
+  final String searchQuery;
+  final bool isLoading;
+  final bool isSubmitting;
+  final String? errorMessage;
+  final double subtotal;
+  final int totalItemCount;
+
+  const PurchaseState({
+    this.allProducts = const [],
+    this.filteredProducts = const [],
+    this.suppliers = const [],
+    this.selectedSupplierId,
+    this.cartItems = const [],
+    this.history = const [],
+    this.searchQuery = '',
+    this.isLoading = true,
+    this.isSubmitting = false,
+    this.errorMessage,
+    this.subtotal = 0.0,
+    this.totalItemCount = 0,
+  });
+}

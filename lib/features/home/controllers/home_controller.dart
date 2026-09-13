@@ -1,255 +1,267 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../home_model/home_model.dart';
 import '../../../services/api_service.dart';
+import '../../sales/sales_model/sales_model.dart';
+import '../../../models/product_model.dart' as api_models;
 
-class HomeState {
-  final HomeDataModel? homeData;
-  final bool isLoading;
-  final int currentIndex;
+class HomeController extends GetxController {
+  var homeData = Rxn<HomeDataModel>();
+  var isLoading = true.obs;
+  var isRefreshing = false.obs;
+  var currentIndex = 0.obs;
+  var selectedDate = DateTime.now().obs;
 
-  HomeState({
-    this.homeData,
-    this.isLoading = true,
-    this.currentIndex = 0,
-  });
+  var allSales = <SaleResponse>[].obs;
+  var allProducts = <api_models.ProductModel>[].obs;
+  Map<String, dynamic>? _lastDashboardRaw;
 
-  HomeState copyWith({
-    HomeDataModel? homeData,
-    bool? isLoading,
-    int? currentIndex,
-  }) {
-    return HomeState(
-      homeData: homeData ?? this.homeData,
-      isLoading: isLoading ?? this.isLoading,
-      currentIndex: currentIndex ?? this.currentIndex,
-    );
-  }
-}
-
-class HomeNotifier extends Notifier<HomeState> {
   @override
-  HomeState build() {
-    Future.microtask(() => loadDashboardData());
-    return HomeState();
+  void onInit() {
+    super.onInit();
+    loadDashboardData();
   }
 
   void setTabIndex(int index) {
-    state = state.copyWith(currentIndex: index);
+    currentIndex.value = index;
+    if (index == 0) {
+      loadDashboardData(showLoading: false);
+    }
   }
 
-  /// Load live analytics from backend API
-  Future<void> loadDashboardData() async {
-    state = state.copyWith(isLoading: true);
+  /// Handle when user selects a different date in the dashboard
+  void onDateChanged(DateTime date) {
+    selectedDate.value = date;
+    // Instantly update stats for that date in memory (0ms)
+    _updateStatsForDate(date);
+    // And refresh latest data in background without blocking UI
+    loadDashboardData(showLoading: false);
+  }
 
-    if (ApiService.instance.isAuthenticated) {
-      final dashboardRes = await ApiService.instance.getDashboard();
-      
-      String shopName = 'ABC Coffee Shop';
-      String shopLocation = 'ផ្លូវ 271, ភ្នំពេញ';
-      String shopLogo = '';
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
-      // Check current business profile from API
-      if (ApiService.instance.currentBusiness != null) {
-        final biz = ApiService.instance.currentBusiness!;
-        if (biz['name'] != null && biz['name'].toString().isNotEmpty) {
-          shopName = biz['name'].toString();
-        }
-        if (biz['address'] != null && biz['address'].toString().isNotEmpty) {
-          shopLocation = biz['address'].toString();
-        }
-        if (biz['logo'] != null) {
-          shopLogo = biz['logo'].toString();
-        }
-      } else if (ApiService.instance.currentUser != null) {
-        final user = ApiService.instance.currentUser!;
-        if (user['name'] != null && user['name'].toString().isNotEmpty) {
-          shopName = user['name'].toString();
-        }
+  ShopModel _getShopInfo() {
+    String shopName = 'ABC Coffee Shop';
+    String shopLocation = 'ភ្នំពេញ';
+    String shopLogo = '';
+
+    if (ApiService.instance.currentBusiness != null) {
+      final biz = ApiService.instance.currentBusiness!;
+      if (biz['name'] != null && biz['name'].toString().isNotEmpty) {
+        shopName = biz['name'].toString();
       }
-
-      if (dashboardRes.success && dashboardRes.data != null) {
-        final data = dashboardRes.data!;
-
-        final todaySales = data['today_sales']?.toString() ?? '0';
-        final newOrders = data['new_orders_count']?.toString() ?? '0';
-        final totalDebt = data['total_debt']?.toString() ?? '0';
-        final debtCustomerCount = data['debt_customer_count']?.toString() ?? '0';
-        final bestSellerName = data['best_seller_name']?.toString() ?? 'មិនទាន់មាន';
-        final bestSellerQty = data['best_seller_qty']?.toString() ?? '0';
-        final lowStock = int.tryParse(data['low_stock_count']?.toString() ?? '0') ?? 0;
-
-        final shop = ShopModel(
-          name: shopName,
-          location: shopLocation,
-          logoUrl: shopLogo,
-        );
-
-        final stats = [
-          StatModel(
-            title: 'ចំណូលថ្ងៃនេះ',
-            amount: '\$$todaySales',
-            percentageText: 'ការលក់សរុបថ្ងៃនេះ',
-            isPositive: true,
-            icon: Icons.attach_money,
-            color: const Color(0xFF2E7D32),
-          ),
-          StatModel(
-            title: 'ការបញ្ជាទិញថ្មី',
-            amount: newOrders,
-            percentageText: 'ការបញ្ជាទិញសរុប',
-            isPositive: true,
-            icon: Icons.shopping_bag_outlined,
-            color: const Color(0xFF1976D2),
-          ),
-          StatModel(
-            title: 'បំណុលអតិថិជន',
-            amount: '\$$totalDebt',
-            percentageText: '$debtCustomerCount នាក់ជំពាក់',
-            isPositive: false,
-            icon: Icons.people_outline,
-            color: const Color(0xFFF57C00),
-          ),
-          StatModel(
-            title: 'ទំនិញលក់ដាច់',
-            amount: bestSellerName,
-            percentageText: '$bestSellerQty ចំនួនលក់',
-            isPositive: true,
-            icon: Icons.local_cafe_outlined,
-            color: const Color(0xFFC2185B),
-          ),
-        ];
-
-        final quickActions = [
-          QuickActionModel(
-            title: 'លក់',
-            icon: Icons.shopping_cart_outlined,
-            bgColor: const Color(0xFFE8F5E9),
-            color: const Color(0xFF2E7D32),
-          ),
-          QuickActionModel(
-            title: 'ទំនិញ',
-            icon: Icons.inventory_2_outlined,
-            bgColor: const Color(0xFFE3F2FD),
-            color: const Color(0xFF1976D2),
-          ),
-          QuickActionModel(
-            title: 'ចំណាយ',
-            icon: Icons.money_off_outlined,
-            bgColor: const Color(0xFFFFF3E0),
-            color: const Color(0xFFF57C00),
-          ),
-          QuickActionModel(
-            title: 'របាយការណ៍',
-            icon: Icons.bar_chart_outlined,
-            bgColor: const Color(0xFFF3E5F5),
-            color: const Color(0xFF7B1FA2),
-          ),
-        ];
-
-        final dashboard = DashboardResponse.fromJson(data);
-
-        state = state.copyWith(
-          isLoading: false,
-          homeData: HomeDataModel(
-            shop: shop,
-            stats: stats,
-            lowStockCount: lowStock,
-            quickActions: quickActions,
-            apiDashboard: dashboard,
-          ),
-        );
-        return;
+      if (biz['address'] != null && biz['address'].toString().isNotEmpty) {
+        shopLocation = biz['address'].toString();
+      }
+      if (biz['logo'] != null) {
+        shopLogo = biz['logo'].toString();
+      }
+    } else if (ApiService.instance.currentUser != null) {
+      final user = ApiService.instance.currentUser!;
+      if (user['name'] != null && user['name'].toString().isNotEmpty) {
+        shopName = user['name'].toString();
       }
     }
 
-    // Fallback if not logged in or offline
-    await loadMockData();
+    return ShopModel(
+      name: shopName,
+      location: shopLocation,
+      logoUrl: shopLogo,
+    );
   }
 
-  Future<void> loadMockData() async {
-    state = state.copyWith(isLoading: true);
-    await Future.delayed(const Duration(milliseconds: 600));
+  List<QuickActionModel> get _quickActions => [
+        QuickActionModel(
+          title: 'លក់',
+          icon: Icons.shopping_cart_outlined,
+          bgColor: const Color(0xFFE8F5E9),
+          color: const Color(0xFF2E7D32),
+        ),
+        QuickActionModel(
+          title: 'ទំនិញ',
+          icon: Icons.inventory_2_outlined,
+          bgColor: const Color(0xFFE3F2FD),
+          color: const Color(0xFF1976D2),
+        ),
+        QuickActionModel(
+          title: 'ចំណាយ',
+          icon: Icons.money_off_outlined,
+          bgColor: const Color(0xFFFFF3E0),
+          color: const Color(0xFFF57C00),
+        ),
+        QuickActionModel(
+          title: 'របាយការណ៍',
+          icon: Icons.bar_chart_outlined,
+          bgColor: const Color(0xFFF3E5F5),
+          color: const Color(0xFF7B1FA2),
+        ),
+      ];
 
-    final shop = ShopModel(
-      name: 'ABC Coffee Shop',
-      location: 'ផ្លូវ 271, ភ្នំពេញ',
+  /// Recalculate dashboard stats to match the given date
+  void _updateStatsForDate(DateTime date) {
+    final isToday = _isSameDay(date, DateTime.now());
+    final daySales = allSales
+        .where((s) => s.saleDate != null && _isSameDay(s.saleDate!, date))
+        .toList();
+
+    // 1. Calculate sales amount for the day
+    double daySalesAmount = daySales.fold<double>(
+      0.0,
+      (sum, s) => sum + s.totalAmount,
     );
+
+    int ordersCount = daySales.length;
+
+    // Fallback to dashboard raw data if today and local list is empty
+    if (isToday && daySales.isEmpty && _lastDashboardRaw != null) {
+      final rawToday = double.tryParse(_lastDashboardRaw!['today_sales']?.toString() ?? '0') ?? 0.0;
+      if (rawToday > 0) daySalesAmount = rawToday;
+      final rawOrders = int.tryParse(_lastDashboardRaw!['new_orders_count']?.toString() ?? '0') ?? 0;
+      if (rawOrders > 0) ordersCount = rawOrders;
+    }
+
+    // 2. Best seller for that day
+    final Map<int, double> productQtyMap = {};
+    for (final s in daySales) {
+      for (final item in s.items) {
+        if (item.productId != null) {
+          productQtyMap[item.productId!] =
+              (productQtyMap[item.productId!] ?? 0) + item.quantity;
+        }
+      }
+    }
+
+    String bestSellerName = 'មិនទាន់មាន';
+    String bestSellerQty = '0';
+
+    if (productQtyMap.isNotEmpty) {
+      int? topId;
+      double maxQty = 0;
+      productQtyMap.forEach((pId, qty) {
+        if (qty > maxQty) {
+          maxQty = qty;
+          topId = pId;
+        }
+      });
+      if (topId != null) {
+        final found = allProducts.firstWhereOrNull((p) => p.id == topId);
+        bestSellerName = found?.name ?? 'ទំនិញ #$topId';
+        bestSellerQty = maxQty.toInt().toString();
+      }
+    } else if (isToday && _lastDashboardRaw != null) {
+      bestSellerName = _lastDashboardRaw!['best_seller_name']?.toString() ?? 'មិនទាន់មាន';
+      bestSellerQty = _lastDashboardRaw!['best_seller_qty']?.toString() ?? '0';
+    }
+
+    // 3. Customer Debt
+    final totalDebt = _lastDashboardRaw?['total_debt']?.toString() ?? '0.00';
+    final debtCustomerCount =
+        _lastDashboardRaw?['debt_customer_count']?.toString() ?? '0';
+    final lowStock =
+        int.tryParse(_lastDashboardRaw?['low_stock_count']?.toString() ?? '0') ?? 0;
+
+    final salesTitle = isToday ? 'ចំណូលថ្ងៃនេះ' : 'ចំណូល (${date.day}/${date.month})';
+    final salesSubtitle = isToday
+        ? 'ការលក់សរុបថ្ងៃនេះ'
+        : 'ការលក់ថ្ងៃ ${date.day}/${date.month}/${date.year}';
 
     final stats = [
       StatModel(
-        title: 'ចំណូលសរុប',
-        amount: '\$1,250.00',
-        percentageText: '+15% ធៀបខែមុន',
+        title: salesTitle,
+        amount: '\$${daySalesAmount.toStringAsFixed(2)}',
+        percentageText: salesSubtitle,
         isPositive: true,
         icon: Icons.attach_money,
         color: const Color(0xFF2E7D32),
       ),
       StatModel(
-        title: 'ការបញ្ជាទិញថ្មី',
-        amount: '45',
-        percentageText: '+5% ថ្ងៃនេះ',
+        title: 'ការបញ្ជាទិញ',
+        amount: '$ordersCount',
+        percentageText: '$ordersCount ការបញ្ជាទិញ',
         isPositive: true,
         icon: Icons.shopping_bag_outlined,
         color: const Color(0xFF1976D2),
       ),
       StatModel(
-        title: 'អតិថិជនសរុប',
-        amount: '1,204',
-        percentageText: '+12 នាក់ថ្ងៃនេះ',
-        isPositive: true,
+        title: 'បំណុលអតិថិជន',
+        amount: '\$$totalDebt',
+        percentageText: '$debtCustomerCount នាក់ជំពាក់',
+        isPositive: false,
         icon: Icons.people_outline,
         color: const Color(0xFFF57C00),
       ),
       StatModel(
         title: 'ទំនិញលក់ដាច់',
-        amount: 'កាហ្វេទឹកដោះគោ',
-        percentageText: '85 កែវ',
+        amount: bestSellerName,
+        percentageText: '$bestSellerQty ចំនួនលក់',
         isPositive: true,
         icon: Icons.local_cafe_outlined,
         color: const Color(0xFFC2185B),
       ),
     ];
 
-    final quickActions = [
-      QuickActionModel(
-        title: 'លក់',
-        icon: Icons.shopping_cart_outlined,
-        bgColor: const Color(0xFFE8F5E9),
-        color: const Color(0xFF2E7D32),
-      ),
-      QuickActionModel(
-        title: 'ទំនិញ',
-        icon: Icons.inventory_2_outlined,
-        bgColor: const Color(0xFFE3F2FD),
-        color: const Color(0xFF1976D2),
-      ),
-      QuickActionModel(
-        title: 'ចំណាយ',
-        icon: Icons.money_off_outlined,
-        bgColor: const Color(0xFFFFF3E0),
-        color: const Color(0xFFF57C00),
-      ),
-      QuickActionModel(
-        title: 'របាយការណ៍',
-        icon: Icons.bar_chart_outlined,
-        bgColor: const Color(0xFFF3E5F5),
-        color: const Color(0xFF7B1FA2),
-      ),
-    ];
-
-    final homeData = HomeDataModel(
-      shop: shop,
+    homeData.value = HomeDataModel(
+      shop: _getShopInfo(),
       stats: stats,
-      quickActions: quickActions,
-      lowStockCount: 12,
-    );
-
-    state = state.copyWith(
-      homeData: homeData,
-      isLoading: false,
+      lowStockCount: lowStock,
+      quickActions: _quickActions,
+      apiDashboard: _lastDashboardRaw != null
+          ? DashboardResponse.fromJson(_lastDashboardRaw!)
+          : null,
     );
   }
-}
 
-final homeProvider = NotifierProvider<HomeNotifier, HomeState>(() => HomeNotifier());
+  /// Load live analytics from backend API with parallel requests and non-blocking background refresh
+  Future<void> loadDashboardData({bool showLoading = true}) async {
+    if (homeData.value == null && showLoading) {
+      isLoading.value = true;
+    } else {
+      isRefreshing.value = true;
+    }
+
+    if (!ApiService.instance.isAuthenticated) {
+      _updateStatsForDate(selectedDate.value);
+      isLoading.value = false;
+      isRefreshing.value = false;
+      return;
+    }
+
+    try {
+      // Execute network requests in parallel for maximum speed
+      final responses = await Future.wait([
+        ApiService.instance.getDashboard(),
+        ApiService.instance.getSales(limit: 100),
+        ApiService.instance.getProducts(),
+      ]);
+
+      final dashboardRes = responses[0] as ApiResponse<Map<String, dynamic>>;
+      final salesRes = responses[1] as ApiResponse<List<SaleResponse>>;
+      final productsRes = responses[2] as ApiResponse<List<api_models.ProductModel>>;
+
+      if (dashboardRes.success && dashboardRes.data != null) {
+        _lastDashboardRaw = dashboardRes.data!;
+      }
+
+      if (salesRes.success && salesRes.data != null) {
+        allSales.assignAll(salesRes.data!);
+      }
+
+      if (productsRes.success && productsRes.data != null) {
+        allProducts.assignAll(productsRes.data!);
+      }
+
+      // Recompute stats for the currently selected date
+      _updateStatsForDate(selectedDate.value);
+    } catch (e) {
+      debugPrint('Error loading dashboard: $e');
+      if (homeData.value == null) {
+        _updateStatsForDate(selectedDate.value);
+      }
+    } finally {
+      isLoading.value = false;
+      isRefreshing.value = false;
+    }
+  }
+}

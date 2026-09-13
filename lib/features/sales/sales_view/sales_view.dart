@@ -1,216 +1,219 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../controllers/sales_controller.dart';
 import '../sales_model/sales_model.dart';
 import '../../stock/stock_model/stock_model.dart';
 import '../../customer/customer_controllers/customer_controller.dart';
 
-class SalesView extends ConsumerWidget {
+class SalesView extends StatelessWidget {
   const SalesView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(salesProvider);
-    final controller = ref.read(salesProvider.notifier);
+  Widget build(BuildContext context) {
+    final controller = Get.find<SalesController>();
 
-    if (state.isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFFAFAFA),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-        ),
-      );
-    }
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Scaffold(
+          backgroundColor: Color(0xFFFAFAFA),
+          body: Center(
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          ),
+        );
+      }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // App Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'លក់ទំនិញ',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.black87),
-                    tooltip: 'ទាញយកទិន្នន័យឡើងវិញ',
-                    onPressed: () => controller.loadProducts(),
-                  ),
-                ],
-              ),
-            ),
-
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // App Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'លក់ទំនិញ',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              onChanged: controller.updateSearch,
-                              decoration: const InputDecoration(
-                                hintText: 'ស្វែងរកទំនិញតាមឈ្មោះ ឬកូដ...',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.black87),
+                      tooltip: 'ទាញយកទិន្នន័យឡើងវិញ',
+                      onPressed: () => controller.loadProducts(),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                onChanged: controller.updateSearch,
+                                decoration: const InputDecoration(
+                                  hintText: 'ស្វែងរកទំនិញតាមឈ្មោះ ឬកូដ...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
                                 ),
-                                border: InputBorder.none,
-                                isDense: true,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Categories
-            SizedBox(
-              height: 40,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: state.categories.length,
-                itemBuilder: (context, index) {
-                  final cat = state.categories[index];
-                  final isSelected = state.selectedCategory?.name == cat.name;
-                  return GestureDetector(
-                    onTap: () => controller.selectCategory(cat),
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFFE8F5E9)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF2E7D32)
-                              : Colors.grey.shade200,
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _getCategoryIcon(cat.name),
-                            size: 16,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Categories
+              SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.categories.length,
+                  itemBuilder: (context, index) {
+                    final cat = controller.categories[index];
+                    final isSelected = controller.selectedCategory.value?.name == cat.name;
+                    return GestureDetector(
+                      onTap: () => controller.selectCategory(cat),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFE8F5E9)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
                             color: isSelected
                                 ? const Color(0xFF2E7D32)
-                                : Colors.grey,
+                                : Colors.grey.shade200,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            cat.name,
-                            style: TextStyle(
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _getCategoryIcon(cat.name),
+                              size: 16,
                               color: isSelected
                                   ? const Color(0xFF2E7D32)
-                                  : Colors.grey.shade700,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              fontSize: 13,
+                                  : Colors.grey,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Text(
+                              cat.name,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey.shade700,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            // Products Grid
-            Expanded(
-              child: state.filteredProducts.isEmpty
-                  ? Center(
-                      child: Text(
-                        'រកមិនឃើញទំនិញឡើយ',
-                        style: TextStyle(color: Colors.grey.shade500),
+              // Products Grid
+              Expanded(
+                child: controller.filteredProducts.isEmpty
+                    ? Center(
+                        child: Text(
+                          'រកមិនឃើញទំនិញឡើយ',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.6,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                            ),
+                        itemCount: controller.filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = controller.filteredProducts[index];
+                          return _buildProductCard(product, controller);
+                        },
                       ),
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 1.6,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                      itemCount: state.filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = state.filteredProducts[index];
-                        return _buildProductCard(product, controller);
-                      },
-                    ),
-            ),
+              ),
 
-            // Cart Section (Bottom Fixed)
-            _buildCartSection(context, state, controller, ref),
-          ],
+              // Cart Section (Bottom Fixed)
+              _buildCartSection(context, controller),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   IconData _getCategoryIcon(String categoryName) {
     switch (categoryName) {
       case 'កាហ្វេ':
-        return Icons.coffee;
+        return Icons.local_cafe_outlined;
       case 'តែ':
-        return Icons.emoji_food_beverage;
-      case 'នំប៉័ងនិងនំ':
-        return Icons.bakery_dining;
+        return Icons.emoji_food_beverage_outlined;
       case 'ភេសជ្ជៈ':
-        return Icons.local_drink;
+        return Icons.wine_bar_outlined;
+      case 'នំខេក':
+        return Icons.cake_outlined;
+      case 'អាហារសម្រន់':
+        return Icons.fastfood_outlined;
       default:
         return Icons.grid_view;
     }
   }
 
-  Widget _buildProductCard(ProductModel product, SalesNotifier controller) {
+  Widget _buildProductCard(ProductModel product, SalesController controller) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -302,9 +305,7 @@ class SalesView extends ConsumerWidget {
 
   Widget _buildCartSection(
     BuildContext context,
-    SalesState state,
-    SalesNotifier controller,
-    WidgetRef ref,
+    SalesController controller,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -331,13 +332,13 @@ class SalesView extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'កន្ត្រកទំនិញ (${state.totalItems})',
+                  'កន្ត្រកទំនិញ (${controller.totalItems})',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
                 ),
-                if (state.cartItems.isNotEmpty)
+                if (controller.cartItems.isNotEmpty)
                   GestureDetector(
                     onTap: controller.clearCart,
                     child: const Row(
@@ -359,131 +360,127 @@ class SalesView extends ConsumerWidget {
             ),
           ),
 
-          // Cart Items List
-          if (state.cartItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text(
-                'មិនទាន់មានទំនិញក្នុងកន្ត្រកទេ',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            )
-          else
+          // Items list in cart
+          if (controller.cartItems.isNotEmpty)
             ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.22,
-              ),
+              constraints: const BoxConstraints(maxHeight: 150),
               child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                itemCount: state.cartItems.length,
-                separatorBuilder: (context, index) => const Divider(height: 8),
+                itemCount: controller.cartItems.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: Colors.grey.shade100),
                 itemBuilder: (context, index) {
-                  final item = state.cartItems[index];
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  final item = controller.cartItems[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '\$${item.product.price.toStringAsFixed(2)} × ${item.quantity}',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
                           children: [
-                            Text(
-                              item.product.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                            IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                size: 20,
+                              ),
+                              color: Colors.grey.shade600,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => controller.updateQuantity(
+                                item.product.id,
+                                -1,
                               ),
                             ),
-                            Text(
-                              '\$${item.product.price.toStringAsFixed(2)} x ${item.quantity}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 11,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              child: Text(
+                                '${item.quantity}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.add_circle_outline,
+                                size: 20,
+                              ),
+                              color: const Color(0xFF2E7D32),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => controller.updateQuantity(
+                                item.product.id,
+                                1,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 60,
+                              child: Text(
+                                '\$${item.totalPrice.toStringAsFixed(2)}',
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () =>
-                                controller.updateQuantity(item.product.id, -1),
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Icon(
-                                Icons.remove,
-                                size: 14,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              '${item.quantity}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () =>
-                                controller.updateQuantity(item.product.id, 1),
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Icon(
-                                Icons.add,
-                                size: 14,
-                                color: Color(0xFF2E7D32),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        '\$${item.totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),
             ),
 
-          const Divider(height: 16),
+          const Divider(height: 1),
 
-          // Summary
+          // Total Calculation Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'សរុបរង',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    Text(
+                      'សរុប (Subtotal)',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
                     Text(
-                      '\$${state.subtotal.toStringAsFixed(2)}',
+                      '\$${controller.subtotal.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
                     ),
@@ -494,104 +491,92 @@ class SalesView extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     GestureDetector(
-                      onTap: () =>
-                          _showDiscountDialog(context, state, controller),
-                      child: const Row(
+                      onTap: () => _showDiscountDialog(context, controller),
+                      child: Row(
                         children: [
                           Text(
-                            'បញ្ចុះតម្លៃ ',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            'បញ្ចុះតម្លៃ (Discount)',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
                           ),
-                          Icon(
+                          const SizedBox(width: 4),
+                          const Icon(
                             Icons.edit_outlined,
-                            color: Colors.green,
-                            size: 13,
+                            size: 14,
+                            color: Color(0xFF2E7D32),
                           ),
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () =>
-                          _showDiscountDialog(context, state, controller),
-                      child: Text(
-                        '-\$${state.discount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                    Text(
+                      '-\$${controller.discount.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F8E9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'សរុបត្រូវទូទាត់',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'សរុបចុងក្រោយ (Total)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
-                      Text(
-                        '\$${state.grandTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Color(0xFF2E7D32),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    ),
+                    Text(
+                      '\$${controller.grandTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Color(0xFF2E7D32),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
 
-          // Payment Methods
+          // Payment Method Selector
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildPaymentMethod(
-                  Icons.money,
+                  Icons.payments_outlined,
                   'សាច់ប្រាក់',
                   'CASH',
-                  state.selectedPaymentMethod == 'CASH',
+                  controller.selectedPaymentMethod.value == 'CASH',
                   controller,
                 ),
                 _buildPaymentMethod(
-                  Icons.account_balance,
+                  Icons.account_balance_outlined,
                   'ធនាគារ',
                   'BANK',
-                  state.selectedPaymentMethod == 'BANK',
+                  controller.selectedPaymentMethod.value == 'BANK',
                   controller,
                 ),
                 _buildPaymentMethod(
                   Icons.qr_code,
                   'QR',
                   'QR',
-                  state.selectedPaymentMethod == 'QR',
+                  controller.selectedPaymentMethod.value == 'QR',
                   controller,
                 ),
                 _buildPaymentMethod(
                   Icons.credit_card,
                   'ជំពាក់',
                   'DEBT',
-                  state.selectedPaymentMethod == 'DEBT',
+                  controller.selectedPaymentMethod.value == 'DEBT',
                   controller,
                 ),
               ],
@@ -603,9 +588,9 @@ class SalesView extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: ElevatedButton(
-              onPressed: state.cartItems.isEmpty
+              onPressed: controller.cartItems.isEmpty
                   ? null
-                  : () => _showCheckoutSheet(context, state, controller, ref),
+                  : () => _showCheckoutSheet(context, controller),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 minimumSize: const Size(double.infinity, 46),
@@ -640,7 +625,7 @@ class SalesView extends ConsumerWidget {
     String title,
     String methodCode,
     bool isSelected,
-    SalesNotifier controller,
+    SalesController controller,
   ) {
     return GestureDetector(
       onTap: () => controller.setPaymentMethod(methodCode),
@@ -677,11 +662,10 @@ class SalesView extends ConsumerWidget {
 
   void _showDiscountDialog(
     BuildContext context,
-    SalesState state,
-    SalesNotifier controller,
+    SalesController controller,
   ) {
     final discountCtrl = TextEditingController(
-      text: state.discount > 0 ? state.discount.toString() : '',
+      text: controller.discount > 0 ? controller.discount.toString() : '',
     );
 
     showDialog(
@@ -729,20 +713,19 @@ class SalesView extends ConsumerWidget {
 
   void _showCheckoutSheet(
     BuildContext context,
-    SalesState state,
-    SalesNotifier controller,
-    WidgetRef ref,
+    SalesController controller,
   ) {
-    final customers = ref.read(customerProvider).allCustomers;
-    int? selectedCustomerId = state.selectedCustomerId;
-    String selectedPaymentMethod =
-        (state.selectedPaymentMethod as dynamic) ?? 'CASH';
+    final customerController = Get.find<CustomerController>();
+    final customers = customerController.allCustomers;
+    int? selectedCustomerId = controller.selectedCustomerId.value;
+    String selectedPaymentMethod = controller.selectedPaymentMethod.value;
     final paidCtrl = TextEditingController(
       text: selectedPaymentMethod == 'DEBT'
           ? '0.00'
-          : state.grandTotal.toStringAsFixed(2),
+          : controller.grandTotal.toStringAsFixed(2),
     );
     bool isSubmitting = false;
+    String? modalError;
 
     showModalBottomSheet(
       context: context,
@@ -753,7 +736,7 @@ class SalesView extends ConsumerWidget {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
-            final double grandTotal = state.grandTotal;
+            final double grandTotal = controller.grandTotal;
 
             return Padding(
               padding: EdgeInsets.only(
@@ -943,7 +926,7 @@ class SalesView extends ConsumerWidget {
                         decimal: true,
                       ),
                       decoration: InputDecoration(
-                        prefixText: '\$ ',
+                        prefixText: '\$',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -954,7 +937,45 @@ class SalesView extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
+
+                    // Error Message Display inside Modal
+                    if (modalError != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade300),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                modalError!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
                     // Confirm Button
                     SizedBox(
@@ -968,7 +989,10 @@ class SalesView extends ConsumerWidget {
                                     double.tryParse(paidCtrl.text.trim()) ??
                                     0.0;
 
-                                setModalState(() => isSubmitting = true);
+                                setModalState(() {
+                                  isSubmitting = true;
+                                  modalError = null;
+                                });
 
                                 final saleRes = await controller.checkout(
                                   customerId: selectedCustomerId,
@@ -977,23 +1001,20 @@ class SalesView extends ConsumerWidget {
                                 );
 
                                 if (!sheetContext.mounted) return;
-                                setModalState(() => isSubmitting = false);
 
                                 if (saleRes != null) {
+                                  setModalState(() => isSubmitting = false);
                                   Navigator.pop(sheetContext);
                                   if (!context.mounted) return;
                                   _showReceiptDialog(context, saleRes);
                                 } else {
-                                  if (!context.mounted) return;
                                   final err =
-                                      ref.read(salesProvider).errorMessage ??
+                                      controller.errorMessage.value ??
                                       'បរាជ័យក្នុងការលក់';
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(err),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  setModalState(() {
+                                    isSubmitting = false;
+                                    modalError = err;
+                                  });
                                 }
                               },
                         style: ElevatedButton.styleFrom(
@@ -1118,11 +1139,11 @@ class SalesView extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text(
-                  'យល់ព្រម',
+                  'រួចរាល់',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -1133,11 +1154,11 @@ class SalesView extends ConsumerWidget {
     );
   }
 
-  Widget _receiptRow(String title, String value) {
+  Widget _receiptRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
         Text(
           value,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),

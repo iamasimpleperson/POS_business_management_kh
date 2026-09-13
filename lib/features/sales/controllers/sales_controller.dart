@@ -1,176 +1,106 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../../stock/stock_model/stock_model.dart';
 import '../sales_model/sales_model.dart';
 import '../../../services/api_service.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../customer/customer_controllers/customer_controller.dart';
 
-class SalesState {
-  final List<ProductModel> allProducts;
-  final List<ProductModel> filteredProducts;
-  final List<ProductCategoryModel> categories;
-  final ProductCategoryModel? selectedCategory;
-  final String searchQuery;
-  final List<CartItemModel> cartItems;
-  final bool isLoading;
-  final bool isSubmitting;
-  final String selectedPaymentMethod;
-  final int? selectedCustomerId;
-  final double discountAmount;
-  final String? errorMessage;
+class SalesController extends GetxController {
+  var allProducts = <ProductModel>[].obs;
+  var filteredProducts = <ProductModel>[].obs;
+  var categories = <ProductCategoryModel>[].obs;
+  var selectedCategory = Rxn<ProductCategoryModel>();
+  var searchQuery = ''.obs;
+  var cartItems = <CartItemModel>[].obs;
+  var isLoading = true.obs;
+  var isSubmitting = false.obs;
+  var selectedPaymentMethod = 'CASH'.obs;
+  var selectedCustomerId = RxnInt();
+  var discountAmount = 0.0.obs;
+  var errorMessage = RxnString();
 
-  SalesState({
-    this.allProducts = const [],
-    this.filteredProducts = const [],
-    this.categories = const [],
-    this.selectedCategory,
-    this.searchQuery = '',
-    this.cartItems = const [],
-    this.isLoading = true,
-    this.isSubmitting = false,
-    this.selectedPaymentMethod = 'CASH',
-    this.selectedCustomerId,
-    this.discountAmount = 0.0,
-    this.errorMessage,
-  });
-
-  SalesState copyWith({
-    List<ProductModel>? allProducts,
-    List<ProductModel>? filteredProducts,
-    List<ProductCategoryModel>? categories,
-    ProductCategoryModel? selectedCategory,
-    String? searchQuery,
-    List<CartItemModel>? cartItems,
-    bool? isLoading,
-    bool? isSubmitting,
-    String? selectedPaymentMethod,
-    int? selectedCustomerId,
-    double? discountAmount,
-    String? errorMessage,
-  }) {
-    return SalesState(
-      allProducts: allProducts ?? this.allProducts,
-      filteredProducts: filteredProducts ?? this.filteredProducts,
-      categories: categories ?? this.categories,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      searchQuery: searchQuery ?? this.searchQuery,
-      cartItems: cartItems ?? this.cartItems,
-      isLoading: isLoading ?? this.isLoading,
-      isSubmitting: isSubmitting ?? this.isSubmitting,
-      selectedPaymentMethod:
-          selectedPaymentMethod ?? (this.selectedPaymentMethod.isNotEmpty ? this.selectedPaymentMethod : 'CASH'),
-      selectedCustomerId: selectedCustomerId ?? this.selectedCustomerId,
-      discountAmount: discountAmount ?? (this.discountAmount),
-      errorMessage: errorMessage,
-    );
-  }
-
-  double get subtotal {
-    final items = cartItems;
-    return items.fold(0.0, (sum, item) => sum + item.totalPrice);
-  }
-
-  double get discount {
-    final d = (discountAmount as dynamic);
-    if (d == null || d is! num) return 0.0;
-    return d.toDouble();
-  }
-
+  double get subtotal => cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+  double get discount => discountAmount.value;
   double get grandTotal {
-    final s = subtotal;
-    final d = discount;
-    final total = s - d;
+    final total = subtotal - discount;
     return total > 0 ? total : 0.0;
   }
+  int get totalItems => cartItems.fold(0, (sum, item) => sum + item.quantity);
 
-  int get totalItems {
-    final items = cartItems;
-    return items.fold(0, (sum, item) => sum + item.quantity);
-  }
-}
-
-class SalesNotifier extends Notifier<SalesState> {
   @override
-  SalesState build() {
-    Future.microtask(() => loadProducts());
-    return SalesState();
+  void onInit() {
+    super.onInit();
+    loadProducts();
   }
 
   void addToCart(ProductModel product) {
-    final items = List<CartItemModel>.from(state.cartItems);
-    final index = items.indexWhere((i) => i.product.id == product.id);
+    final index = cartItems.indexWhere((i) => i.product.id == product.id);
 
     if (index >= 0) {
-      items[index] = items[index].copyWith(quantity: items[index].quantity + 1);
+      cartItems[index] = cartItems[index].copyWith(quantity: cartItems[index].quantity + 1);
     } else {
-      items.add(CartItemModel(product: product, quantity: 1));
+      cartItems.add(CartItemModel(product: product, quantity: 1));
     }
-
-    state = state.copyWith(cartItems: items);
   }
 
   void removeFromCart(String productId) {
-    final items =
-        state.cartItems.where((i) => i.product.id != productId).toList();
-    state = state.copyWith(cartItems: items);
+    cartItems.removeWhere((i) => i.product.id == productId);
   }
 
   void updateQuantity(String productId, int delta) {
-    final items = List<CartItemModel>.from(state.cartItems);
-    final index = items.indexWhere((i) => i.product.id == productId);
+    final index = cartItems.indexWhere((i) => i.product.id == productId);
 
     if (index >= 0) {
-      final newQuantity = items[index].quantity + delta;
+      final newQuantity = cartItems[index].quantity + delta;
       if (newQuantity <= 0) {
-        items.removeAt(index);
+        cartItems.removeAt(index);
       } else {
-        items[index] = items[index].copyWith(quantity: newQuantity);
+        cartItems[index] = cartItems[index].copyWith(quantity: newQuantity);
       }
-      state = state.copyWith(cartItems: items);
     }
   }
 
   void clearCart() {
-    state = state.copyWith(
-      cartItems: [],
-      discountAmount: 0.0,
-      selectedCustomerId: null,
-    );
+    cartItems.clear();
+    discountAmount.value = 0.0;
+    selectedCustomerId.value = null;
   }
 
   void setPaymentMethod(String method) {
-    state = state.copyWith(selectedPaymentMethod: method);
+    selectedPaymentMethod.value = method;
   }
 
   void setCustomer(int? customerId) {
-    state = state.copyWith(selectedCustomerId: customerId);
+    selectedCustomerId.value = customerId;
   }
 
   void setDiscount(double discount) {
-    state = state.copyWith(discountAmount: discount);
+    discountAmount.value = discount;
   }
 
   void selectCategory(ProductCategoryModel? category) {
-    state = state.copyWith(selectedCategory: category);
+    selectedCategory.value = category;
     _applyFilters();
   }
 
   void updateSearch(String query) {
-    state = state.copyWith(searchQuery: query);
+    searchQuery.value = query;
     _applyFilters();
   }
 
   void _applyFilters() {
-    var filtered = state.allProducts;
+    var filtered = allProducts.toList();
 
-    if (state.selectedCategory != null &&
-        state.selectedCategory!.name != 'ទាំងអស់') {
+    if (selectedCategory.value != null &&
+        selectedCategory.value!.name != 'ទាំងអស់') {
       filtered = filtered
-          .where((p) => p.category.name == state.selectedCategory!.name)
+          .where((p) => p.category.name == selectedCategory.value!.name)
           .toList();
     }
 
-    if (state.searchQuery.isNotEmpty) {
-      final q = state.searchQuery.toLowerCase();
+    if (searchQuery.value.isNotEmpty) {
+      final q = searchQuery.value.toLowerCase();
       filtered = filtered
           .where((p) =>
               p.name.toLowerCase().contains(q) ||
@@ -178,19 +108,18 @@ class SalesNotifier extends Notifier<SalesState> {
           .toList();
     }
 
-    state = state.copyWith(filteredProducts: filtered);
+    filteredProducts.assignAll(filtered);
   }
 
   /// Load live products and categories from backend API
   Future<void> loadProducts() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    isLoading.value = true;
+    errorMessage.value = null;
 
     if (!ApiService.instance.isAuthenticated) {
-      state = state.copyWith(
-        isLoading: false,
-        allProducts: [],
-        filteredProducts: [],
-      );
+      isLoading.value = false;
+      allProducts.clear();
+      filteredProducts.clear();
       return;
     }
 
@@ -247,24 +176,17 @@ class SalesNotifier extends Notifier<SalesState> {
           );
         }).toList();
 
-        state = state.copyWith(
-          isLoading: false,
-          categories: loadedCategories,
-          selectedCategory: loadedCategories.first,
-          allProducts: products,
-          filteredProducts: products,
-        );
+        categories.assignAll(loadedCategories);
+        selectedCategory.value = loadedCategories.first;
+        allProducts.assignAll(products);
+        _applyFilters();
       } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: prodResponse.error,
-        );
+        errorMessage.value = prodResponse.error;
       }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'មានបញ្ហាក្នុងការទាញយកទិន្នន័យ: $e',
-      );
+      errorMessage.value = 'មានបញ្ហាក្នុងការទាញយកទិន្នន័យ: $e';
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -276,16 +198,31 @@ class SalesNotifier extends Notifier<SalesState> {
     String? customInvoiceNo,
     bool saveAsDraft = false,
   }) async {
-    if (state.cartItems.isEmpty) return null;
+    if (cartItems.isEmpty) {
+      errorMessage.value = 'សូមជ្រើសរើសទំនិញដាក់ចូលក្នុងកន្ត្រកជាមុនសិន';
+      return null;
+    }
 
-    state = state.copyWith(isSubmitting: true, errorMessage: null);
+    isSubmitting.value = true;
+    errorMessage.value = null;
 
-    final selectedMethod = paymentMethod ?? state.selectedPaymentMethod;
-    final total = state.grandTotal;
+    // Ensure business ID exists
+    if (ApiService.instance.currentBusinessId == null) {
+      await ApiService.instance.fetchUserBusinesses();
+    }
+    final businessId = ApiService.instance.currentBusinessId;
+    if (businessId == null) {
+      isSubmitting.value = false;
+      errorMessage.value = 'មិនទាន់មានព័ត៌មានអាជីវកម្ម (Business ID)';
+      return null;
+    }
+
+    final selectedMethod = paymentMethod ?? selectedPaymentMethod.value;
+    final total = grandTotal;
     final paid = customPaidAmount ??
         (selectedMethod == 'DEBT' ? 0.0 : total);
 
-    final saleItems = state.cartItems.map((item) {
+    final saleItems = cartItems.map((item) {
       final pId = int.tryParse(item.product.id) ?? 0;
       return SaleItemCreate(
         productId: pId,
@@ -299,10 +236,10 @@ class SalesNotifier extends Notifier<SalesState> {
         'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
     final saleCreate = SaleCreate(
-      businessId: ApiService.instance.currentBusinessId ?? 0,
-      customerId: customerId ?? state.selectedCustomerId,
+      businessId: businessId,
+      customerId: customerId ?? selectedCustomerId.value,
       invoiceNo: invoice,
-      discountAmount: state.discountAmount,
+      discountAmount: discountAmount.value,
       paidAmount: paid,
       paymentMethod: selectedMethod,
       saleDate: DateTime.now(),
@@ -311,29 +248,36 @@ class SalesNotifier extends Notifier<SalesState> {
     );
 
     try {
-      final response = await ApiService.instance.createSale(sale: saleCreate);
-      state = state.copyWith(isSubmitting: false);
+      final response = await ApiService.instance.createSale(
+        businessId: businessId,
+        sale: saleCreate,
+      );
+      isSubmitting.value = false;
 
       if (response.success && response.data != null) {
         clearCart();
         // Refresh product stocks in background
         loadProducts();
+
+        // Refresh dashboard data immediately!
+        if (Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().loadDashboardData();
+        }
+
+        // Refresh customer data so their totalSpent & active status update!
+        if (Get.isRegistered<CustomerController>()) {
+          Get.find<CustomerController>().loadCustomers(showLoading: false);
+        }
+
         return response.data;
       } else {
-        state = state.copyWith(
-          errorMessage: response.error ?? 'បរាជ័យក្នុងការបង្កើតការលក់',
-        );
+        errorMessage.value = response.error ?? 'បរាជ័យក្នុងការបង្កើតការលក់';
         return null;
       }
     } catch (e) {
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage: 'កំហុសក្នុងការលក់: $e',
-      );
+      isSubmitting.value = false;
+      errorMessage.value = 'កំហុសក្នុងការលក់: $e';
       return null;
     }
   }
 }
-
-final salesProvider =
-    NotifierProvider<SalesNotifier, SalesState>(() => SalesNotifier());

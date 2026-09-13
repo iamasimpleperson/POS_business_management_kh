@@ -1,47 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../controllers/register_controller.dart';
 
-class RegisterTextFieldWidget extends ConsumerWidget {
+class RegisterTextFieldWidget extends StatelessWidget {
   const RegisterTextFieldWidget({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(registerProvider);
-    final controller = ref.read(registerProvider.notifier);
+  Widget build(BuildContext context) {
+    final controller = Get.isRegistered<RegisterController>()
+        ? Get.find<RegisterController>()
+        : Get.put(RegisterController());
 
-    return Column(
-      children: [
-        _buildTextField(
-          label: 'ឈ្មោះហៅក្រៅ',
-          hint: 'បញ្ចូលឈ្មោះហៅក្រៅរបស់អ្នក',
-          icon: Icons.person_outline,
-          onChanged: controller.updateName,
-        ),
-        _buildTextField(
-          label: 'អ៊ីមែល',
-          hint: 'បញ្ចូលអ៊ីមែលរបស់អ្នក',
-          icon: Icons.email_outlined,
-          onChanged: controller.updateEmail,
-        ),
-        _buildTextField(
-          label: 'លេខទូរស័ព្ទ',
-          hint: 'បញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
-          icon: Icons.phone_outlined,
-          onChanged: controller.updatePhone,
-        ),
-        _buildTextField(
-          label: 'ពាក្យសម្ងាត់',
-          hint: 'បញ្ចូលពាក្យសម្ងាត់ (យ៉ាងតិច ៨ តួអក្សរ)',
-          icon: Icons.lock_outline,
-          onChanged: controller.updatePassword,
-          isPassword: true,
-          isPasswordVisible: state.isPasswordVisible,
-          onVisibilityToggle: controller.togglePasswordVisibility,
-          helperOrErrorText: state.passwordWarning,
-        ),
-      ],
-    );
+    return Obx(() {
+      final isPasswordVisible = controller.isPasswordVisible.value;
+      final passwordWarning = controller.passwordWarning.value;
+
+      return Column(
+        children: [
+          _buildTextField(
+            label: 'ឈ្មោះហៅក្រៅ',
+            hint: 'បញ្ចូលឈ្មោះហៅក្រៅរបស់អ្នក',
+            icon: Icons.person_outline,
+            onChanged: controller.updateName,
+          ),
+          _buildTextField(
+            label: 'អ៊ីមែល',
+            hint: 'បញ្ចូលអ៊ីមែលរបស់អ្នក',
+            icon: Icons.email_outlined,
+            onChanged: controller.updateEmail,
+          ),
+          _buildTextField(
+            label: 'លេខទូរស័ព្ទ',
+            hint: 'បញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
+            icon: Icons.phone_outlined,
+            onChanged: controller.updatePhone,
+          ),
+          _buildTextField(
+            label: 'ពាក្យសម្ងាត់',
+            hint: 'បញ្ចូលពាក្យសម្ងាត់ (យ៉ាងតិច ៨ តួអក្សរ)',
+            icon: Icons.lock_outline,
+            onChanged: controller.updatePassword,
+            isPassword: true,
+            isPasswordVisible: isPasswordVisible,
+            onVisibilityToggle: controller.togglePasswordVisibility,
+            helperOrErrorText: passwordWarning,
+          ),
+        ],
+      );
+    });
   }
 }
 

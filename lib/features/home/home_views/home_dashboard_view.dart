@@ -1,28 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
+import '../home_model/home_model.dart';
 import '../widgets/dashboard_date_picker.dart';
 
-class HomeDashboardView extends ConsumerWidget {
+class HomeDashboardView extends StatelessWidget {
   const HomeDashboardView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(homeProvider);
+  Widget build(BuildContext context) {
+    final controller = Get.find<HomeController>();
 
-    if (state.isLoading || state.homeData == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-      );
-    }
+    return Obx(() {
+      if (controller.homeData.value == null && controller.isLoading.value) {
+        return const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+        );
+      }
 
-    final data = state.homeData!;
+      final data = controller.homeData.value ??
+          HomeDataModel(
+            shop: ShopModel(name: 'ABC Coffee Shop', location: 'ភ្នំពេញ'),
+            stats: [],
+            lowStockCount: 0,
+            quickActions: [],
+          );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      return RefreshIndicator(
+        color: const Color(0xFF2E7D32),
+        onRefresh: () => controller.loadDashboardData(showLoading: false),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (controller.isRefreshing.value)
+                const LinearProgressIndicator(
+                  minHeight: 2.5,
+                  color: Color(0xFF2E7D32),
+                  backgroundColor: Color(0xFFE8F5E9),
+                ),
           // App Bar Area (Menu + Notification)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,11 +154,28 @@ class HomeDashboardView extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Date Picker Button
-          DashboardDatePickerWidget(
-            initialDate: DateTime.now(),
-            onDateSelected: (date) {
-              // TODO: Fetch new data for the selected date
-            },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              DashboardDatePickerWidget(
+                initialDate: controller.selectedDate.value,
+                onDateSelected: (date) {
+                  controller.onDateChanged(date);
+                },
+              ),
+              if (controller.isRefreshing.value)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8.0),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF2E7D32),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -319,6 +354,8 @@ class HomeDashboardView extends ConsumerWidget {
           const SizedBox(height: 32),
         ],
       ),
-    );
+    ),
+  );
+});
   }
 }

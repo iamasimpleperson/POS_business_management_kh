@@ -1,75 +1,42 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../auth_model/login_model.dart';
 import '../../../services/api_service.dart';
 
-class LoginState {
-  final LoginModel model;
-  final bool isPasswordVisible;
-  final bool isLoading;
-  final String? errorMessage;
-
-  LoginState({
-    required this.model,
-    this.isPasswordVisible = false,
-    this.isLoading = false,
-    this.errorMessage,
-  });
-
-  LoginState copyWith({
-    LoginModel? model,
-    bool? isPasswordVisible,
-    bool? isLoading,
-    String? errorMessage,
-  }) {
-    return LoginState(
-      model: model ?? this.model,
-      isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
-    );
-  }
-}
-
-class LoginNotifier extends Notifier<LoginState> {
-  @override
-  LoginState build() {
-    return LoginState(model: LoginModel());
-  }
+class LoginController extends GetxController {
+  final model = LoginModel();
+  var isPasswordVisible = false.obs;
+  var isLoading = false.obs;
+  var errorMessage = RxnString();
 
   void togglePasswordVisibility() {
-    state = state.copyWith(isPasswordVisible: !state.isPasswordVisible);
+    isPasswordVisible.value = !isPasswordVisible.value;
   }
 
   void updateEmail(String value) {
-    state.model.username = value;
+    model.username = value;
   }
 
   void updatePassword(String value) {
-    state.model.password = value;
+    model.password = value;
   }
 
   Future<bool> login() async {
-    if (state.model.username.isEmpty || state.model.password.isEmpty) {
-      state = state.copyWith(errorMessage: 'សូមបញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់');
+    if (model.username.isEmpty || model.password.isEmpty) {
+      errorMessage.value = 'សូមបញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់';
       return false;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    isLoading.value = true;
+    errorMessage.value = null;
 
     final result = await ApiService.instance.login(
-      username: state.model.username,
-      password: state.model.password,
+      username: model.username,
+      password: model.password,
     );
 
-    state = state.copyWith(
-      isLoading: false,
-      errorMessage: result.success ? null : result.error,
-    );
+    isLoading.value = false;
+    errorMessage.value = result.success ? null : result.error;
 
     return result.success;
   }
 }
-
-final loginProvider = NotifierProvider<LoginNotifier, LoginState>(() {
-  return LoginNotifier();
-});

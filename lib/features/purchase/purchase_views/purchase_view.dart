@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../purchase_controllers/purchase_controller.dart';
 import '../purchase_models/purchase_model.dart';
 import '../../stock/stock_model/stock_model.dart';
 import '../../supplier/supplier_views/supplier_view.dart';
 
-class PurchaseView extends ConsumerStatefulWidget {
+class PurchaseView extends StatefulWidget {
   const PurchaseView({super.key});
 
   @override
-  ConsumerState<PurchaseView> createState() => _PurchaseViewState();
+  State<PurchaseView> createState() => _PurchaseViewState();
 }
 
-class _PurchaseViewState extends ConsumerState<PurchaseView>
+class _PurchaseViewState extends State<PurchaseView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchCtrl = TextEditingController();
@@ -32,10 +32,14 @@ class _PurchaseViewState extends ConsumerState<PurchaseView>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(purchaseProvider);
-    final controller = ref.read(purchaseProvider.notifier);
+    final controller = Get.isRegistered<PurchaseController>()
+        ? Get.find<PurchaseController>()
+        : Get.put(PurchaseController());
 
-    return Scaffold(
+    return Obx(() {
+      final state = controller.state;
+
+      return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         title: const Text(
@@ -122,7 +126,8 @@ class _PurchaseViewState extends ConsumerState<PurchaseView>
                 _buildHistoryTab(context, state, controller),
               ],
             ),
-    );
+      );
+    });
   }
 
   // ==================== TAB 1: NEW PURCHASE ====================
@@ -899,7 +904,7 @@ class _PurchaseViewState extends ConsumerState<PurchaseView>
                                 } else {
                                   if (!context.mounted) return;
                                   final err =
-                                      ref.read(purchaseProvider).errorMessage ??
+                                      controller.errorMessage.value ??
                                       'បរាជ័យក្នុងការទិញចូល';
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(

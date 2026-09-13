@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../controllers/stock_controller.dart';
 import '../stock_model/stock_model.dart';
 import '../../purchase/purchase_views/purchase_view.dart';
 
-class StockView extends ConsumerStatefulWidget {
+class StockView extends StatefulWidget {
   const StockView({super.key});
 
   @override
-  ConsumerState<StockView> createState() => _StockViewState();
+  State<StockView> createState() => _StockViewState();
 }
 
-class _StockViewState extends ConsumerState<StockView> {
+class _StockViewState extends State<StockView> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -22,17 +22,21 @@ class _StockViewState extends ConsumerState<StockView> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(stockProvider);
-    final controller = ref.read(stockProvider.notifier);
+    final controller = Get.isRegistered<StockController>()
+        ? Get.find<StockController>()
+        : Get.put(StockController());
 
-    if (state.isLoading && state.allProducts.isEmpty) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFFAFAFA),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-        ),
-      );
-    }
+    return Obx(() {
+      final state = controller.state;
+
+      if (state.isLoading && state.allProducts.isEmpty) {
+        return const Scaffold(
+          backgroundColor: Color(0xFFFAFAFA),
+          body: Center(
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          ),
+        );
+      }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -424,6 +428,7 @@ class _StockViewState extends ConsumerState<StockView> {
         ),
       ),
     );
+    });
   }
 
   Widget _buildEmptyState(StockState state, StockNotifier controller) {

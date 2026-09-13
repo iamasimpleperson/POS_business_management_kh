@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../customer_controllers/customer_controller.dart';
 import '../customer_models/customer_model.dart';
 
-class CustomerView extends ConsumerStatefulWidget {
+class CustomerView extends StatefulWidget {
   const CustomerView({super.key});
 
   @override
-  ConsumerState<CustomerView> createState() => _CustomerViewState();
+  State<CustomerView> createState() => _CustomerViewState();
 }
 
-class _CustomerViewState extends ConsumerState<CustomerView> {
+class _CustomerViewState extends State<CustomerView> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _tabs = ['ទាំងអស់', 'VIP', 'ថ្មី', 'អសកម្ម'];
+
+  CustomerController get controller => Get.isRegistered<CustomerController>()
+      ? Get.find<CustomerController>()
+      : Get.put(CustomerController());
 
   static const List<Color> _avatarColors = [
     Color(0xFFBBDEFB), // Blue 100
@@ -33,65 +37,65 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
 
   @override
   Widget build(BuildContext context) {
-    final customerState = ref.watch(customerProvider);
+    return Obx(() {
+      final customerState = controller.state;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(customerState),
-            Expanded(
-              child: RefreshIndicator(
-                color: const Color(0xFF4CAF50),
-                onRefresh: () async {
-                  await ref
-                      .read(customerProvider.notifier)
-                      .loadCustomers(showLoading: false);
-                },
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          _buildStatsCards(customerState),
-                          _buildSearchBar(),
-                          _buildTabs(customerState),
-                          _buildFilterRow(customerState),
-                        ],
-                      ),
-                    ),
-                    if (customerState.isLoading)
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF4CAF50),
-                          ),
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(customerState),
+              Expanded(
+                child: RefreshIndicator(
+                  color: const Color(0xFF4CAF50),
+                  onRefresh: () async {
+                    await controller.loadCustomers(showLoading: false);
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            _buildStatsCards(customerState),
+                            _buildSearchBar(),
+                            _buildTabs(customerState),
+                            _buildFilterRow(customerState),
+                          ],
                         ),
-                      )
-                    else if (customerState.errorMessage != null &&
-                        customerState.allCustomers.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _buildErrorView(customerState.errorMessage!),
-                      )
-                    else if (customerState.filteredCustomers.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _buildEmptyView(),
-                      )
-                    else
-                      _buildCustomerList(customerState.filteredCustomers),
-                  ],
+                      ),
+                      if (customerState.isLoading)
+                        const SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF4CAF50),
+                            ),
+                          ),
+                        )
+                      else if (customerState.errorMessage != null &&
+                          customerState.allCustomers.isEmpty)
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: _buildErrorView(customerState.errorMessage!),
+                        )
+                      else if (customerState.filteredCustomers.isEmpty)
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: _buildEmptyView(),
+                        )
+                      else
+                        _buildCustomerList(customerState.filteredCustomers),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildHeader(CustomerState state) {
@@ -125,7 +129,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                 icon: const Icon(Icons.refresh, color: Colors.black87),
                 tooltip: 'ទាញយកទិន្នន័យឡើងវិញ',
                 onPressed: () {
-                  ref.read(customerProvider.notifier).loadCustomers();
+                  controller.loadCustomers();
                 },
               ),
               const SizedBox(width: 8),
@@ -257,7 +261,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
         child: TextField(
           controller: _searchController,
           onChanged: (val) {
-            ref.read(customerProvider.notifier).setSearchQuery(val);
+            controller.setSearchQuery(val);
           },
           decoration: InputDecoration(
             hintText: 'ស្វែងរកដោយឈ្មោះ លេខទូរស័ព្ទ ឬអ៊ីមែល...',
@@ -268,7 +272,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                     icon: Icon(Icons.clear, color: Colors.grey[400], size: 18),
                     onPressed: () {
                       _searchController.clear();
-                      ref.read(customerProvider.notifier).setSearchQuery('');
+                      controller.setSearchQuery('');
                       setState(() {});
                     },
                   )
@@ -290,7 +294,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
           final isSelected = state.selectedFilterTabIndex == index;
           return GestureDetector(
             onTap: () {
-              ref.read(customerProvider.notifier).setFilterTab(index);
+              controller.setFilterTab(index);
             },
             child: Column(
               children: [
@@ -581,7 +585,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                ref.read(customerProvider.notifier).loadCustomers();
+                controller.loadCustomers();
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('ព្យាយាមម្តងទៀត'),
@@ -725,8 +729,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                                   );
 
                                   setModalState(() => isSubmitting = true);
-                                  final success = await ref
-                                      .read(customerProvider.notifier)
+                                  final success = await controller
                                       .createCustomer(newCustomer);
 
                                   if (!bottomSheetContext.mounted) return;
@@ -742,7 +745,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                                     );
                                   } else {
                                     if (!context.mounted) return;
-                                    final err = ref.read(customerProvider).errorMessage ??
+                                    final err = controller.errorMessage.value ??
                                         'បរាជ័យក្នុងការបន្ថែមអតិថិជន';
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -964,8 +967,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                                   );
 
                                   setModalState(() => isSubmitting = true);
-                                  final success = await ref
-                                      .read(customerProvider.notifier)
+                                  final success = await controller
                                       .updateCustomer(customer.id, updateData);
 
                                   if (!bottomSheetContext.mounted) return;
@@ -982,9 +984,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                                     );
                                   } else {
                                     if (!context.mounted) return;
-                                    final err = ref
-                                            .read(customerProvider)
-                                            .errorMessage ??
+                                    final err = controller.errorMessage.value ??
                                         'បរាជ័យក្នុងការកែប្រែព័ត៌មានអតិថិជន';
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -1049,8 +1049,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
               ),
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                final success = await ref
-                    .read(customerProvider.notifier)
+                final success = await controller
                     .deleteCustomer(customer.id);
 
                 if (!context.mounted) return;
@@ -1062,7 +1061,7 @@ class _CustomerViewState extends ConsumerState<CustomerView> {
                     ),
                   );
                 } else {
-                  final err = ref.read(customerProvider).errorMessage ??
+                  final err = controller.errorMessage.value ??
                       'បរាជ័យក្នុងការលុបអតិថិជន';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

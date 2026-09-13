@@ -23,6 +23,14 @@ class _DashboardDatePickerWidgetState extends State<DashboardDatePickerWidget> {
     _selectedDate = widget.initialDate;
   }
 
+  @override
+  void didUpdateWidget(covariant DashboardDatePickerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDate != oldWidget.initialDate) {
+      _selectedDate = widget.initialDate;
+    }
+  }
+
   final List<String> _khmerMonths = [
     'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
     'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'

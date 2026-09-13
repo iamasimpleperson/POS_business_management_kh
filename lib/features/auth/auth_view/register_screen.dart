@@ -1,16 +1,17 @@
 import 'package:business_management_kh/features/auth/widgets/register_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../controllers/register_controller.dart';
 
-class RegisterScreen extends ConsumerWidget {
+class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(registerProvider);
-    final controller = ref.read(registerProvider.notifier);
+  Widget build(BuildContext context) {
+    final controller = Get.isRegistered<RegisterController>()
+        ? Get.find<RegisterController>()
+        : Get.put(RegisterController());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -91,54 +92,57 @@ class RegisterScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 
                 // Create Button
-                ElevatedButton(
-                  onPressed: state.isLoading
-                      ? null
-                      : () async {
-                          final success = await controller.register();
-                          if (success && context.mounted) {
-                            context.go('/home'); // Adjust target path as needed
-                          } else if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.errorMessage ?? 'បរាជ័យក្នុងការបង្កើតគណនី'),
-                                backgroundColor: Colors.red[700],
-                              ),
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Obx(() {
+                  final isLoading = controller.isLoading.value;
+                  return ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final success = await controller.register();
+                            if (success && context.mounted) {
+                              context.go('/home'); // Adjust target path as needed
+                            } else if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(controller.errorMessage.value ?? 'បរាជ័យក្នុងការបង្កើតគណនី'),
+                                  backgroundColor: Colors.red[700],
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.person_add_alt_1, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'បង្កើត',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
-                          ],
-                        ),
-                ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person_add_alt_1, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'បង្កើត',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                  );
+                }),
               ],
             ),
             const SizedBox(height: 32),

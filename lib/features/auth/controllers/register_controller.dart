@@ -1,57 +1,24 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../auth_model/register_model.dart';
-
 import '../../../services/api_service.dart';
 
-class RegisterState {
-  final RegisterModel model;
-  final bool isPasswordVisible;
-  final bool isLoading;
-  final String? errorMessage;
-  final String? passwordWarning;
-
-  RegisterState({
-    required this.model,
-    this.isPasswordVisible = false,
-    this.isLoading = false,
-    this.errorMessage,
-    this.passwordWarning,
-  });
-
-  RegisterState copyWith({
-    RegisterModel? model,
-    bool? isPasswordVisible,
-    bool? isLoading,
-    String? errorMessage,
-    String? passwordWarning,
-  }) {
-    return RegisterState(
-      model: model ?? this.model,
-      isPasswordVisible: isPasswordVisible ?? this.isPasswordVisible,
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
-      passwordWarning: passwordWarning,
-    );
-  }
-}
-
-class RegisterNotifier extends Notifier<RegisterState> {
-  @override
-  RegisterState build() {
-    return RegisterState(model: RegisterModel());
-  }
+class RegisterController extends GetxController {
+  final model = RegisterModel();
+  var isPasswordVisible = false.obs;
+  var isLoading = false.obs;
+  var errorMessage = RxnString();
+  var passwordWarning = RxnString();
 
   void togglePasswordVisibility() {
-    state = state.copyWith(isPasswordVisible: !state.isPasswordVisible);
+    isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  void updateName(String value) => state.model.name = value;
-  void updateEmail(String value) => state.model.email = value;
-  void updatePhone(String value) => state.model.phone = value;
+  void updateName(String value) => model.name = value;
+  void updateEmail(String value) => model.email = value;
+  void updatePhone(String value) => model.phone = value;
   void updatePassword(String value) {
-    state.model.password = value;
-    final warning = _checkPasswordStrength(value);
-    state = state.copyWith(passwordWarning: warning);
+    model.password = value;
+    passwordWarning.value = _checkPasswordStrength(value);
   }
 
   String? _checkPasswordStrength(String password) {
@@ -68,43 +35,36 @@ class RegisterNotifier extends Notifier<RegisterState> {
   }
 
   Future<bool> register() async {
-    if (state.model.name.isEmpty || state.model.email.isEmpty || state.model.password.isEmpty) {
-      state = state.copyWith(errorMessage: 'សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់');
+    if (model.name.isEmpty || model.email.isEmpty || model.password.isEmpty) {
+      errorMessage.value = 'សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់';
       return false;
     }
 
-    if (state.model.password.length < 8) {
-      state = state.copyWith(
-        errorMessage: 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៨ តួអក្សរដើម្បីសុវត្ថិភាពខ្ពស់',
-      );
+    if (model.password.length < 8) {
+      errorMessage.value = 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៨ តួអក្សរដើម្បីសុវត្ថិភាពខ្ពស់';
       return false;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    isLoading.value = true;
+    errorMessage.value = null;
 
     final result = await ApiService.instance.register(
-      name: state.model.name,
-      email: state.model.email,
-      password: state.model.password,
-      phone: state.model.phone,
+      name: model.name,
+      email: model.email,
+      password: model.password,
+      phone: model.phone,
     );
 
     if (result.success) {
       // Automatically log in after registration
       await ApiService.instance.login(
-        username: state.model.email,
-        password: state.model.password,
+        username: model.email,
+        password: model.password,
       );
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      errorMessage: result.success ? null : result.error,
-    );
+    isLoading.value = false;
+    errorMessage.value = result.success ? null : result.error;
     return result.success;
   }
 }
-
-final registerProvider = NotifierProvider<RegisterNotifier, RegisterState>(() {
-  return RegisterNotifier();
-});

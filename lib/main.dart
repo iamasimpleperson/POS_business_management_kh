@@ -1,10 +1,9 @@
 import 'package:business_management_kh/routes/appRoute.dart';
 import 'package:flutter/material.dart';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -12,6 +11,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(routerConfig: AppRoute.router);
+    return GetMaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      routeInformationProvider: AppRoute.router.routeInformationProvider,
+      routeInformationParser: AppRoute.router.routeInformationParser,
+      routerDelegate: AppRoute.router.routerDelegate,
+      backButtonDispatcher: AppRoute.router.backButtonDispatcher,
+    );
   }
 }

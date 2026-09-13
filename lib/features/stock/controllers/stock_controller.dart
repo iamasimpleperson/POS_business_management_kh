@@ -1,55 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../stock_model/stock_model.dart';
 import '../../../models/product_model.dart' as api_models;
 import '../../../services/api_service.dart';
 
-class StockState {
-  final List<ProductModel> allProducts;
-  final List<ProductModel> filteredProducts;
-  final List<ProductStatModel> stats;
-  final List<ProductCategoryModel> categories;
-  final bool isLoading;
-  final int selectedFilterTabIndex;
-  final String searchQuery;
-  final String? errorMessage;
-
-  StockState({
-    this.allProducts = const [],
-    this.filteredProducts = const [],
-    this.stats = const [],
-    this.categories = const [],
-    this.isLoading = true,
-    this.selectedFilterTabIndex = 0,
-    this.searchQuery = '',
-    this.errorMessage,
-  });
-
-  StockState copyWith({
-    List<ProductModel>? allProducts,
-    List<ProductModel>? filteredProducts,
-    List<ProductStatModel>? stats,
-    List<ProductCategoryModel>? categories,
-    bool? isLoading,
-    int? selectedFilterTabIndex,
-    String? searchQuery,
-    String? errorMessage,
-  }) {
-    return StockState(
-      allProducts: allProducts ?? this.allProducts,
-      filteredProducts: filteredProducts ?? this.filteredProducts,
-      stats: stats ?? this.stats,
-      categories: categories ?? this.categories,
-      isLoading: isLoading ?? this.isLoading,
-      selectedFilterTabIndex:
-          selectedFilterTabIndex ?? this.selectedFilterTabIndex,
-      searchQuery: searchQuery ?? this.searchQuery,
-      errorMessage: errorMessage,
-    );
-  }
-}
-
-class StockNotifier extends Notifier<StockState> {
+class StockController extends GetxController {
   static const List<Map<String, Color>> _categoryPalettes = [
     {'bg': Color(0xFFE8F5E9), 'text': Color(0xFF2E7D32)},
     {'bg': Color(0xFFE3F2FD), 'text': Color(0xFF1565C0)},
@@ -60,58 +15,49 @@ class StockNotifier extends Notifier<StockState> {
     {'bg': Color(0xFFFFF8E1), 'text': Color(0xFFF57F17)},
   ];
 
+  var allProducts = <ProductModel>[].obs;
+  var filteredProducts = <ProductModel>[].obs;
+  var stats = <ProductStatModel>[].obs;
+  var categories = <ProductCategoryModel>[].obs;
+  var isLoading = true.obs;
+  var selectedFilterTabIndex = 0.obs;
+  var searchQuery = ''.obs;
+  var errorMessage = RxnString();
+
   @override
-  StockState build() {
-    Future.microtask(() => loadProducts());
-    return StockState();
+  void onInit() {
+    super.onInit();
+    loadProducts();
   }
 
   void setFilterTab(int index) {
-    final filtered = _filterProducts(
-      state.allProducts,
-      index,
-      state.searchQuery,
-    );
-    state = state.copyWith(
-      selectedFilterTabIndex: index,
-      filteredProducts: filtered,
-    );
+    selectedFilterTabIndex.value = index;
+    _applyFilter();
   }
 
   void setSearchQuery(String query) {
-    final filtered = _filterProducts(
-      state.allProducts,
-      state.selectedFilterTabIndex,
-      query,
-    );
-    state = state.copyWith(
-      searchQuery: query,
-      filteredProducts: filtered,
-    );
+    searchQuery.value = query;
+    _applyFilter();
   }
 
-  List<ProductModel> _filterProducts(
-    List<ProductModel> all,
-    int tabIndex,
-    String query,
-  ) {
-    List<ProductModel> list = all;
+  void _applyFilter() {
+    List<ProductModel> list = allProducts.toList();
 
     // 1. Tab filter
-    if (tabIndex == 1) {
+    if (selectedFilterTabIndex.value == 1) {
       list = list
           .where((p) => p.status == 'low_stock' || (p.stock <= 15 && p.stock > 0))
           .toList();
-    } else if (tabIndex == 2) {
+    } else if (selectedFilterTabIndex.value == 2) {
       list = list
           .where((p) => p.status == 'out_of_stock' || p.stock == 0)
           .toList();
-    } else if (tabIndex == 3) {
+    } else if (selectedFilterTabIndex.value == 3) {
       list = list.where((p) => p.status == 'inactive').toList();
     }
 
     // 2. Search query filter
-    final cleanQuery = query.trim().toLowerCase();
+    final cleanQuery = searchQuery.value.trim().toLowerCase();
     if (cleanQuery.isNotEmpty) {
       list = list.where((p) {
         final nameMatch = p.name.toLowerCase().contains(cleanQuery);
@@ -121,21 +67,20 @@ class StockNotifier extends Notifier<StockState> {
       }).toList();
     }
 
-    return list;
+    filteredProducts.assignAll(list);
   }
 
   /// Load live products and categories directly from backend database API
   Future<void> loadProducts() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    isLoading.value = true;
+    errorMessage.value = null;
 
     if (!ApiService.instance.isAuthenticated) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'សូមចូលគណនីដើម្បីមើលទិន្នន័យស្តុក',
-        allProducts: [],
-        filteredProducts: [],
-        stats: _generateStats(0, 0, 0, 0),
-      );
+      isLoading.value = false;
+      errorMessage.value = 'សូមចូលគណនីដើម្បីមើលទិន្នន័យស្តុក';
+      allProducts.clear();
+      filteredProducts.clear();
+      stats.assignAll(_generateStats(0, 0, 0, 0));
       return;
     }
 
@@ -167,7 +112,7 @@ class StockNotifier extends Notifier<StockState> {
         textColor: const Color(0xFF2E7D32),
       );
 
-      // 2. Fetch products from database (including inactive to calculate stats accurately)
+      // 2. Fetch products from database
       final response = await ApiService.instance.getProducts(includeInactive: true);
 
       if (response.success && response.data != null) {
@@ -215,43 +160,29 @@ class StockNotifier extends Notifier<StockState> {
         final inactiveCount =
             mappedProducts.where((p) => p.status == 'inactive').length;
 
-        final stats = _generateStats(
+        stats.assignAll(_generateStats(
           totalCount,
           lowStockCount,
           outOfStockCount,
           inactiveCount,
-        );
+        ));
 
-        state = state.copyWith(
-          isLoading: false,
-          allProducts: mappedProducts,
-          filteredProducts: _filterProducts(
-            mappedProducts,
-            state.selectedFilterTabIndex,
-            state.searchQuery,
-          ),
-          stats: stats,
-          categories: loadedCategories,
-          errorMessage: null,
-        );
+        categories.assignAll(loadedCategories);
+        allProducts.assignAll(mappedProducts);
+        _applyFilter();
       } else {
-        // Error from API or empty response with error message
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: response.error ?? 'មិនអាចទាញយកទិន្នន័យទំនិញបានទេ',
-          allProducts: [],
-          filteredProducts: [],
-          stats: _generateStats(0, 0, 0, 0),
-        );
+        errorMessage.value = response.error ?? 'មិនអាចទាញយកទិន្នន័យទំនិញបានទេ';
+        allProducts.clear();
+        filteredProducts.clear();
+        stats.assignAll(_generateStats(0, 0, 0, 0));
       }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'កំហុសក្នុងការភ្ជាប់ទៅកាន់ទិន្នន័យ: $e',
-        allProducts: [],
-        filteredProducts: [],
-        stats: _generateStats(0, 0, 0, 0),
-      );
+      errorMessage.value = 'កំហុសក្នុងការភ្ជាប់ទៅកាន់ទិន្នន័យ: $e';
+      allProducts.clear();
+      filteredProducts.clear();
+      stats.assignAll(_generateStats(0, 0, 0, 0));
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -352,7 +283,39 @@ class StockNotifier extends Notifier<StockState> {
     }
     return false;
   }
+
+  StockState get state => StockState(
+        allProducts: allProducts,
+        filteredProducts: filteredProducts,
+        stats: stats,
+        categories: categories,
+        isLoading: isLoading.value,
+        selectedFilterTabIndex: selectedFilterTabIndex.value,
+        searchQuery: searchQuery.value,
+        errorMessage: errorMessage.value,
+      );
 }
 
-final stockProvider =
-    NotifierProvider<StockNotifier, StockState>(() => StockNotifier());
+typedef StockNotifier = StockController;
+
+class StockState {
+  final List<ProductModel> allProducts;
+  final List<ProductModel> filteredProducts;
+  final List<ProductStatModel> stats;
+  final List<ProductCategoryModel> categories;
+  final bool isLoading;
+  final int selectedFilterTabIndex;
+  final String searchQuery;
+  final String? errorMessage;
+
+  const StockState({
+    this.allProducts = const [],
+    this.filteredProducts = const [],
+    this.stats = const [],
+    this.categories = const [],
+    this.isLoading = true,
+    this.selectedFilterTabIndex = 0,
+    this.searchQuery = '',
+    this.errorMessage,
+  });
+}
