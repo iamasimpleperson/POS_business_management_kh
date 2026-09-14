@@ -4,6 +4,7 @@ import '../home_model/home_model.dart';
 import '../../../services/api_service.dart';
 import '../../sales/sales_model/sales_model.dart';
 import '../../../models/product_model.dart' as api_models;
+import '../../../core/localizations/language_controller.dart';
 
 class HomeController extends GetxController {
   var homeData = Rxn<HomeDataModel>();
@@ -20,6 +21,10 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     loadDashboardData();
+    // Reactively refresh dashboard stats when language changes
+    ever(LanguageController.to.currentLocale, (_) {
+      _updateStatsForDate(selectedDate.value);
+    });
   }
 
   void setTabIndex(int index) {
@@ -44,7 +49,7 @@ class HomeController extends GetxController {
 
   ShopModel _getShopInfo() {
     String shopName = 'ABC Coffee Shop';
-    String shopLocation = 'ភ្នំពេញ';
+    String shopLocation = 'default_city'.tr;
     String shopLogo = '';
 
     if (ApiService.instance.currentBusiness != null) {
@@ -74,25 +79,25 @@ class HomeController extends GetxController {
 
   List<QuickActionModel> get _quickActions => [
         QuickActionModel(
-          title: 'លក់',
+          title: 'nav_sales'.tr,
           icon: Icons.shopping_cart_outlined,
           bgColor: const Color(0xFFE8F5E9),
           color: const Color(0xFF2E7D32),
         ),
         QuickActionModel(
-          title: 'ទំនិញ',
+          title: 'nav_stock'.tr,
           icon: Icons.inventory_2_outlined,
           bgColor: const Color(0xFFE3F2FD),
           color: const Color(0xFF1976D2),
         ),
         QuickActionModel(
-          title: 'ចំណាយ',
+          title: 'menu_expenses'.tr,
           icon: Icons.money_off_outlined,
           bgColor: const Color(0xFFFFF3E0),
           color: const Color(0xFFF57C00),
         ),
         QuickActionModel(
-          title: 'របាយការណ៍',
+          title: 'menu_reports'.tr,
           icon: Icons.bar_chart_outlined,
           bgColor: const Color(0xFFF3E5F5),
           color: const Color(0xFF7B1FA2),
@@ -133,7 +138,7 @@ class HomeController extends GetxController {
       }
     }
 
-    String bestSellerName = 'មិនទាន់មាន';
+    String bestSellerName = 'none_yet'.tr;
     String bestSellerQty = '0';
 
     if (productQtyMap.isNotEmpty) {
@@ -147,11 +152,11 @@ class HomeController extends GetxController {
       });
       if (topId != null) {
         final found = allProducts.firstWhereOrNull((p) => p.id == topId);
-        bestSellerName = found?.name ?? 'ទំនិញ #$topId';
+        bestSellerName = found?.name ?? '${'nav_stock'.tr} #$topId';
         bestSellerQty = maxQty.toInt().toString();
       }
     } else if (isToday && _lastDashboardRaw != null) {
-      bestSellerName = _lastDashboardRaw!['best_seller_name']?.toString() ?? 'មិនទាន់មាន';
+      bestSellerName = _lastDashboardRaw!['best_seller_name']?.toString() ?? 'none_yet'.tr;
       bestSellerQty = _lastDashboardRaw!['best_seller_qty']?.toString() ?? '0';
     }
 
@@ -162,10 +167,10 @@ class HomeController extends GetxController {
     final lowStock =
         int.tryParse(_lastDashboardRaw?['low_stock_count']?.toString() ?? '0') ?? 0;
 
-    final salesTitle = isToday ? 'ចំណូលថ្ងៃនេះ' : 'ចំណូល (${date.day}/${date.month})';
+    final salesTitle = isToday ? 'revenue_today'.tr : '${'revenue'.tr} (${date.day}/${date.month})';
     final salesSubtitle = isToday
-        ? 'ការលក់សរុបថ្ងៃនេះ'
-        : 'ការលក់ថ្ងៃ ${date.day}/${date.month}/${date.year}';
+        ? 'total_sales_today'.tr
+        : '${'sales_on'.tr} ${date.day}/${date.month}/${date.year}';
 
     final stats = [
       StatModel(
@@ -177,25 +182,25 @@ class HomeController extends GetxController {
         color: const Color(0xFF2E7D32),
       ),
       StatModel(
-        title: 'ការបញ្ជាទិញ',
+        title: 'orders'.tr,
         amount: '$ordersCount',
-        percentageText: '$ordersCount ការបញ្ជាទិញ',
+        percentageText: '$ordersCount ${'orders_unit'.tr}',
         isPositive: true,
         icon: Icons.shopping_bag_outlined,
         color: const Color(0xFF1976D2),
       ),
       StatModel(
-        title: 'បំណុលអតិថិជន',
+        title: 'customer_debts'.tr,
         amount: '\$$totalDebt',
-        percentageText: '$debtCustomerCount នាក់ជំពាក់',
+        percentageText: '$debtCustomerCount ${'debtors_unit'.tr}',
         isPositive: false,
         icon: Icons.people_outline,
         color: const Color(0xFFF57C00),
       ),
       StatModel(
-        title: 'ទំនិញលក់ដាច់',
-        amount: bestSellerName,
-        percentageText: '$bestSellerQty ចំនួនលក់',
+        title: 'best_seller'.tr,
+        amount: bestSellerName == 'មិនទាន់មាន' ? 'none_yet'.tr : bestSellerName,
+        percentageText: '$bestSellerQty ${'sold_qty'.tr}',
         isPositive: true,
         icon: Icons.local_cafe_outlined,
         color: const Color(0xFFC2185B),

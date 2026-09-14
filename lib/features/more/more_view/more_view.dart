@@ -10,6 +10,7 @@ import '../../debt/debt_views/debt_view.dart';
 import '../../reports/reports_views/reports_view.dart';
 import '../../member/member_views/member_view.dart';
 import '../../../services/api_service.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class MoreView extends StatefulWidget {
   const MoreView({super.key});
@@ -26,6 +27,8 @@ class _MoreViewState extends State<MoreView> {
         : Get.put(HomeController());
 
     return Obx(() {
+      // Rebuild on language change
+      LanguageController.to.currentLocale.value;
       final data = homeController.homeData.value;
       if (homeController.isLoading.value && data == null) {
         return const Center(
@@ -34,7 +37,7 @@ class _MoreViewState extends State<MoreView> {
       }
 
       if (data == null) {
-        return const Center(child: Text('គ្មានទិន្នន័យ'));
+        return Center(child: Text('no_data'.tr));
       }
 
       return Scaffold(
@@ -60,16 +63,16 @@ class _MoreViewState extends State<MoreView> {
                 _buildStoreCard(context, data),
                 const SizedBox(height: 20),
 
-                // Section 1: គ្រប់គ្រងវត្តភាព
-                _buildSectionTitle('គ្រប់គ្រងវត្តភាព'),
+                // Section 1: Management
+                _buildSectionTitle('sec_management'.tr),
                 const SizedBox(height: 8),
                 _buildManagementCard(context),
                 const SizedBox(height: 20),
 
-                // Section 2: ការកំណត់ និងជំនួយ
-                _buildSectionTitle('ការកំណត់ និងជំនួយ'),
+                // Section 2: Settings & Help
+                _buildSectionTitle('sec_settings'.tr),
                 const SizedBox(height: 8),
-                _buildSettingsCard(),
+                _buildSettingsCard(context),
                 const SizedBox(height: 24),
 
                 // Logout Button
@@ -87,37 +90,73 @@ class _MoreViewState extends State<MoreView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'បន្ថែម',
-          style: TextStyle(
+        Text(
+          'more_title'.tr,
+          style: const TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),
         ),
-        Stack(
-          clipBehavior: Clip.none,
+        Row(
           children: [
-            IconButton(
-              icon: const Icon(
-                Icons.notifications_none_outlined,
-                size: 26,
-                color: Colors.black87,
-              ),
-              onPressed: () {},
-              splashRadius: 24,
-            ),
-            Positioned(
-              right: 12,
-              top: 10,
+            // Quick language switch button in header
+            InkWell(
+              onTap: () => LanguageController.to.showLanguageBottomSheet(context),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFC8E6C9)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      LanguageController.to.currentFlag,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      LanguageController.to.isKhmer ? 'ខ្មែរ' : 'EN',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
+            const SizedBox(width: 8),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none_outlined,
+                    size: 26,
+                    color: Colors.black87,
+                  ),
+                  onPressed: () {},
+                  splashRadius: 24,
+                ),
+                Positioned(
+                  right: 12,
+                  top: 10,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -127,7 +166,7 @@ class _MoreViewState extends State<MoreView> {
 
   Widget _buildUserProfileCard() {
     final user = ApiService.instance.currentUser;
-    final userName = user?['name']?.toString() ?? 'គណនីរបស់ខ្ញុំ';
+    final userName = user?['name']?.toString() ?? 'my_account'.tr;
     final userEmail = user?['email']?.toString() ?? user?['phone']?.toString() ?? '';
     final userId = user?['id'];
 
@@ -251,7 +290,7 @@ class _MoreViewState extends State<MoreView> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'គ្រប់គ្រងហាង',
+                    'store_info'.tr,
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],
@@ -293,7 +332,7 @@ class _MoreViewState extends State<MoreView> {
         children: [
           _buildMenuItem(
             icon: Icons.storefront_outlined,
-            title: 'ព័ត៌មានហាង',
+            title: 'store_info'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -305,7 +344,7 @@ class _MoreViewState extends State<MoreView> {
           ),
           _buildMenuItem(
             icon: Icons.people_outline,
-            title: 'បុគ្គលិក',
+            title: 'menu_staff'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -316,7 +355,7 @@ class _MoreViewState extends State<MoreView> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.credit_card_outlined,
-            title: 'ចំណាយ (Expenses)',
+            title: 'menu_expenses'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -327,7 +366,7 @@ class _MoreViewState extends State<MoreView> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.account_balance_wallet_outlined,
-            title: 'បំណុល (Debts)',
+            title: 'menu_debts'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -338,7 +377,7 @@ class _MoreViewState extends State<MoreView> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.local_shipping_outlined,
-            title: 'អ្នកផ្គត់ផ្គង់',
+            title: 'menu_suppliers'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -349,7 +388,7 @@ class _MoreViewState extends State<MoreView> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.shopping_bag_outlined,
-            title: 'ទិញទំនិញចូល (Purchase)',
+            title: 'menu_purchases'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -360,7 +399,7 @@ class _MoreViewState extends State<MoreView> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.bar_chart_rounded,
-            title: 'របាយការណ៍ (Reports)',
+            title: 'menu_reports'.tr,
             onTap: () {
               Navigator.push(
                 context,
@@ -374,7 +413,7 @@ class _MoreViewState extends State<MoreView> {
     );
   }
 
-  Widget _buildSettingsCard() {
+  Widget _buildSettingsCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -392,19 +431,46 @@ class _MoreViewState extends State<MoreView> {
         children: [
           _buildMenuItem(
             icon: Icons.language_outlined,
-            title: 'ភាសា',
-            onTap: () {},
+            title: 'menu_language'.tr,
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    LanguageController.to.currentFlag,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    LanguageController.to.currentLanguageName,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E7D32),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            onTap: () {
+              LanguageController.to.showLanguageBottomSheet(context);
+            },
           ),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.help_outline_rounded,
-            title: 'ជំនួយ',
+            title: 'menu_help'.tr,
             onTap: () {},
           ),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF5F5F5)),
           _buildMenuItem(
             icon: Icons.info_outline_rounded,
-            title: 'អំពី',
+            title: 'menu_about'.tr,
             onTap: () {},
             isLast: true,
           ),
@@ -417,6 +483,7 @@ class _MoreViewState extends State<MoreView> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Widget? trailing,
     bool isLast = false,
   }) {
     return InkWell(
@@ -449,6 +516,10 @@ class _MoreViewState extends State<MoreView> {
                 ),
               ),
             ),
+            if (trailing != null) ...[
+              trailing,
+              const SizedBox(width: 6),
+            ],
             Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
           ],
         ),
@@ -462,21 +533,21 @@ class _MoreViewState extends State<MoreView> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('ចាកចេញ'),
-            content: const Text('តើអ្នកពិតជាចង់ចាកចេញពីគណនីនេះមែនទេ?'),
+            title: Text('logout_confirm_title'.tr),
+            content: Text('logout_confirm_desc'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'បោះបង់',
-                  style: TextStyle(color: Colors.grey),
+                child: Text(
+                  'cancel'.tr,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'ចាកចេញ',
-                  style: TextStyle(color: Colors.red),
+                child: Text(
+                  'btn_logout'.tr,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             ],
@@ -492,14 +563,14 @@ class _MoreViewState extends State<MoreView> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFFFCDD2)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, color: Color(0xFFE53935), size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.logout_rounded, color: Color(0xFFE53935), size: 20),
+            const SizedBox(width: 8),
             Text(
-              'ចាកចេញ',
-              style: TextStyle(
+              'btn_logout'.tr,
+              style: const TextStyle(
                 color: Color(0xFFE53935),
                 fontSize: 15,
                 fontWeight: FontWeight.bold,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class DashboardDatePickerWidget extends StatefulWidget {
   final DateTime initialDate;
@@ -31,13 +32,21 @@ class _DashboardDatePickerWidgetState extends State<DashboardDatePickerWidget> {
     }
   }
 
-  final List<String> _khmerMonths = [
+  static const List<String> _khmerMonths = [
     'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
     'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
   ];
 
+  static const List<String> _englishMonths = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
   String _formatDate(DateTime date) {
-    return '${date.day} ${_khmerMonths[date.month - 1]} ${date.year}';
+    if (LanguageController.to.isKhmer) {
+      return '${date.day} ${_khmerMonths[date.month - 1]} ${date.year}';
+    }
+    return '${_englishMonths[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   Future<void> _selectDate(BuildContext context) async {

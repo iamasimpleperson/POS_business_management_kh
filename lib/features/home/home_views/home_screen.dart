@@ -9,6 +9,7 @@ import '../../sales/sales_view/sales_view.dart';
 import '../../customer/customer_controllers/customer_controller.dart';
 import '../../customer/customer_views/customer_view.dart';
 import '../../more/more_view/more_view.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -20,6 +21,9 @@ class HomeScreen extends StatelessWidget {
     Get.put(StockController());
     Get.put(SalesController());
     Get.put(CustomerController());
+    if (!Get.isRegistered<LanguageController>()) {
+      Get.put(LanguageController(), permanent: true);
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -37,8 +41,10 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
+      bottomNavigationBar: Obx(() {
+        // Observe language change so navigation labels re-render immediately
+        LanguageController.to.currentLocale.value;
+        return BottomNavigationBar(
           currentIndex: controller.currentIndex.value,
           onTap: controller.setTabIndex,
           type: BottomNavigationBarType.fixed,
@@ -49,27 +55,30 @@ class HomeScreen extends StatelessWidget {
             fontSize: 12,
           ),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ដើម'),
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.inventory_2_outlined),
-              label: 'ទំនិញ',
+              icon: const Icon(Icons.home),
+              label: 'nav_home'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              label: 'លក់',
+              icon: const Icon(Icons.inventory_2_outlined),
+              label: 'nav_stock'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              label: 'អតិថិជន',
+              icon: const Icon(Icons.shopping_cart_outlined),
+              label: 'nav_sales'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz),
-              label: 'បន្ថែម',
+              icon: const Icon(Icons.people_outline),
+              label: 'nav_customer'.tr,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz),
+              label: 'nav_more'.tr,
             ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 }

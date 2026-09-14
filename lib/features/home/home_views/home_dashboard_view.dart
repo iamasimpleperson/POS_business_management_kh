@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../home_model/home_model.dart';
 import '../widgets/dashboard_date_picker.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class HomeDashboardView extends StatelessWidget {
   const HomeDashboardView({super.key});
@@ -12,6 +13,8 @@ class HomeDashboardView extends StatelessWidget {
     final controller = Get.find<HomeController>();
 
     return Obx(() {
+      // Observe language change
+      LanguageController.to.currentLocale.value;
       if (controller.homeData.value == null && controller.isLoading.value) {
         return const Center(
           child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
@@ -41,7 +44,7 @@ class HomeDashboardView extends StatelessWidget {
                   color: Color(0xFF2E7D32),
                   backgroundColor: Color(0xFFE8F5E9),
                 ),
-          // App Bar Area (Menu + Notification)
+          // App Bar Area (Menu + Language + Notification)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -49,23 +52,58 @@ class HomeDashboardView extends StatelessWidget {
                 icon: const Icon(Icons.menu, size: 28),
                 onPressed: () {},
               ),
-              Stack(
+              Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none, size: 28),
-                    onPressed: () {},
-                  ),
-                  Positioned(
-                    right: 12,
-                    top: 12,
+                  InkWell(
+                    onTap: () => LanguageController.to.showLanguageBottomSheet(context),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFC8E6C9)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            LanguageController.to.currentFlag,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            LanguageController.to.isKhmer ? 'ខ្មែរ' : 'EN',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_none, size: 28),
+                        onPressed: () {},
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -75,7 +113,7 @@ class HomeDashboardView extends StatelessWidget {
 
           // Greeting
           Text(
-            'សួស្តី, ${data.shop.name} 👋',
+            '${'greeting'.tr}, ${data.shop.name} 👋',
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -83,9 +121,9 @@ class HomeDashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'សូមស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងហាងរបស់អ្នក',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+          Text(
+            'welcome_dashboard'.tr,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 24),
 
@@ -136,7 +174,7 @@ class HomeDashboardView extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            data.shop.location,
+                            data.shop.location.tr,
                             style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 13,
@@ -272,15 +310,15 @@ class HomeDashboardView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'ស្តុកទាប',
-                        style: TextStyle(
+                      Text(
+                        'low_stock_warning'.tr,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                       Text(
-                        'មានទំនិញ ${data.lowStockCount} មុខស្តុកទាប',
+                        'items_low_stock'.trParams({'count': '${data.lowStockCount}'}),
                         style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 13,
@@ -291,16 +329,16 @@ class HomeDashboardView extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {},
-                  child: const Row(
+                  child: Row(
                     children: [
                       Text(
-                        'មើលទាំងអស់',
-                        style: TextStyle(
+                        'view_all'.tr,
+                        style: const TextStyle(
                           color: Color(0xFF2E7D32),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.chevron_right,
                         color: Color(0xFF2E7D32),
                         size: 18,
@@ -314,9 +352,9 @@ class HomeDashboardView extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Quick Actions Title
-          const Text(
-            'ចំណុចសំខាន់ៗ',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            'quick_actions'.tr,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
@@ -338,7 +376,7 @@ class HomeDashboardView extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      action.title,
+                      action.title.tr,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
