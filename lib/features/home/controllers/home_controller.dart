@@ -184,7 +184,9 @@ class HomeController extends GetxController {
       StatModel(
         title: 'orders'.tr,
         amount: '$ordersCount',
-        percentageText: '$ordersCount ${'orders_unit'.tr}',
+        percentageText: LanguageController.to.isKhmer
+            ? '$ordersCount ការបញ្ជាទិញ'
+            : '$ordersCount orders',
         isPositive: true,
         icon: Icons.shopping_bag_outlined,
         color: const Color(0xFF1976D2),
@@ -192,15 +194,21 @@ class HomeController extends GetxController {
       StatModel(
         title: 'customer_debts'.tr,
         amount: '\$$totalDebt',
-        percentageText: '$debtCustomerCount ${'debtors_unit'.tr}',
+        percentageText: LanguageController.to.isKhmer
+            ? '$debtCustomerCount នាក់ជំពាក់'
+            : '$debtCustomerCount debtors',
         isPositive: false,
         icon: Icons.people_outline,
         color: const Color(0xFFF57C00),
       ),
       StatModel(
         title: 'best_seller'.tr,
-        amount: bestSellerName == 'មិនទាន់មាន' ? 'none_yet'.tr : bestSellerName,
-        percentageText: '$bestSellerQty ${'sold_qty'.tr}',
+        amount: (bestSellerName == 'មិនទាន់មាន' || bestSellerName == 'none_yet')
+            ? 'none_yet'.tr
+            : bestSellerName,
+        percentageText: LanguageController.to.isKhmer
+            ? '$bestSellerQty ចំនួនលក់'
+            : '$bestSellerQty sold',
         isPositive: true,
         icon: Icons.local_cafe_outlined,
         color: const Color(0xFFC2185B),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../debt_controllers/debt_controller.dart';
 import '../debt_models/debt_model.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class DebtView extends StatelessWidget {
   const DebtView({super.key});
@@ -13,9 +14,9 @@ class DebtView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          'គ្រប់គ្រងបំណុល (Debts)',
-          style: TextStyle(
+        title: Text(
+          'debt_title'.tr,
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -27,11 +28,13 @@ class DebtView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'retry'.tr,
             onPressed: () => controller.loadDebts(),
           ),
         ],
       ),
       body: Obx(() {
+        LanguageController.to.currentLocale.value;
         if (controller.isLoading.value) {
           return const Center(
             child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
@@ -52,7 +55,7 @@ class DebtView extends StatelessWidget {
               child: TextField(
                 onChanged: (val) => controller.searchQuery.value = val,
                 decoration: InputDecoration(
-                  hintText: 'ស្វែងរកតាមឈ្មោះ ឬលេខទូរស័ព្ទ...',
+                  hintText: 'search_debt_hint'.tr,
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
                   filled: true,
@@ -81,7 +84,7 @@ class DebtView extends StatelessWidget {
                               size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 12),
                           Text(
-                            'គ្មានទិន្នន័យបំណុលត្រូវបង្ហាញទេ',
+                            'no_debt_data'.tr,
                             style: TextStyle(color: Colors.grey[600], fontSize: 14),
                           ),
                         ],
@@ -123,13 +126,13 @@ class DebtView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFE65100)),
-                      SizedBox(width: 4),
+                      const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFE65100)),
+                      const SizedBox(width: 4),
                       Text(
-                        'គេជំពាក់នៅសល់',
-                        style: TextStyle(fontSize: 11, color: Color(0xFFE65100), fontWeight: FontWeight.bold),
+                        'debt_remaining'.tr,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFE65100), fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -144,7 +147,7 @@ class DebtView extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${controller.openDebtCount} វិក្កយបត្រ',
+                    '${controller.openDebtCount} ${'invoices_unit'.tr}',
                     style: TextStyle(fontSize: 10, color: Colors.grey[700]),
                   ),
                 ],
@@ -165,13 +168,13 @@ class DebtView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF2E7D32)),
-                      SizedBox(width: 4),
+                      const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF2E7D32)),
+                      const SizedBox(width: 4),
                       Text(
-                        'បានសងរួចសរុប',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                        'debt_paid'.tr,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -186,7 +189,7 @@ class DebtView extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'ជោគជ័យ',
+                    'success'.tr,
                     style: TextStyle(fontSize: 10, color: Colors.grey[700]),
                   ),
                 ],
@@ -199,7 +202,7 @@ class DebtView extends StatelessWidget {
   }
 
   Widget _buildTabFilter(DebtController controller) {
-    final tabs = ['ទាំងអស់', 'មិនទាន់សង', 'សងរួច'];
+    final tabs = ['tab_all'.tr, 'debt_unpaid'.tr, 'debt_completed'.tr];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
@@ -309,7 +312,7 @@ class DebtView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isPaid ? 'សងរួច' : 'ជំពាក់',
+                  isPaid ? 'debt_completed'.tr : 'debt_unpaid'.tr,
                   style: TextStyle(
                     color: isPaid ? Colors.green.shade800 : Colors.red.shade800,
                     fontSize: 11,
@@ -328,7 +331,7 @@ class DebtView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('បំណុលសរុប', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('total_debt_amount'.tr, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   const SizedBox(height: 2),
                   Text('\$${debt.totalAmount.toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
@@ -337,7 +340,7 @@ class DebtView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('បានសង', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('debt_paid'.tr, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   const SizedBox(height: 2),
                   Text('\$${debt.paidAmount.toStringAsFixed(2)}',
                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green[700])),
@@ -346,7 +349,7 @@ class DebtView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('នៅសល់ត្រូវសង', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('remaining_amount'.tr, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   const SizedBox(height: 2),
                   Text(
                     '\$${debt.remainingAmount.toStringAsFixed(2)}',
@@ -372,9 +375,9 @@ class DebtView extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: const Icon(Icons.payments_outlined, size: 16, color: Colors.white),
-                label: const Text(
-                  'កត់ត្រាការសងប្រាក់',
-                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                label: Text(
+                  'record_payment'.tr,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 onPressed: () => _showPaymentSheet(context, debt, controller),
               ),
@@ -415,7 +418,7 @@ class DebtView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ទទួលប្រាក់ពី ${debt.customerName ?? "អតិថិជន"}',
+                      '${'repay_debt'.tr} (${debt.customerName ?? "customer_title".tr})',
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
@@ -423,7 +426,7 @@ class DebtView extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'ទឹកប្រាក់ជំពាក់នៅសល់: \$${debt.remainingAmount.toStringAsFixed(2)}',
+                  '${'remaining_amount'.tr}: \$${debt.remainingAmount.toStringAsFixed(2)}',
                   style: const TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 16),
@@ -433,7 +436,7 @@ class DebtView extends StatelessWidget {
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'ចំនួនទឹកប្រាក់សង (\$)',
+                    labelText: '${'repay_amount'.tr} (\$)',
                     prefixText: '\$ ',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -441,13 +444,13 @@ class DebtView extends StatelessWidget {
                 const SizedBox(height: 14),
 
                 // Payment Method Selector
-                const Text('វិធីសាស្ត្រទូទាត់:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('actions'.tr, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('សាច់ប្រាក់ (CASH)'),
+                        label: Text('payment_cash'.tr),
                         selected: selectedMethod == 'CASH',
                         selectedColor: const Color(0xFF2E7D32),
                         labelStyle: TextStyle(
@@ -460,7 +463,7 @@ class DebtView extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('ផ្ទេរតាមធនាគារ (BANK)'),
+                        label: Text('payment_bank'.tr),
                         selected: selectedMethod == 'BANK',
                         selectedColor: const Color(0xFF2E7D32),
                         labelStyle: TextStyle(
@@ -478,7 +481,7 @@ class DebtView extends StatelessWidget {
                 TextField(
                   controller: noteController,
                   decoration: InputDecoration(
-                    labelText: 'ចំណាំ (ស្រេចចិត្ត)',
+                    labelText: 'notes'.tr,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -497,9 +500,9 @@ class DebtView extends StatelessWidget {
                       final amount = double.tryParse(amountController.text.trim());
                       if (amount == null || amount <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('សូមបញ្ចូលទឹកប្រាក់សងឱ្យបានត្រឹមត្រូវ'),
-                            backgroundColor: Color(0xFFE53935),
+                          SnackBar(
+                            content: Text('enter_valid_amount'.tr),
+                            backgroundColor: const Color(0xFFE53935),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -528,9 +531,9 @@ class DebtView extends StatelessWidget {
                         );
                       }
                     },
-                    child: const Text(
-                      'បញ្ជាក់ការទទួលប្រាក់',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    child: Text(
+                      'confirm_payment'.tr,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),

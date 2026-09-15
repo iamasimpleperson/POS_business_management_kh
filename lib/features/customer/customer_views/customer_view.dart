@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../customer_controllers/customer_controller.dart';
 import '../customer_models/customer_model.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class CustomerView extends StatefulWidget {
   const CustomerView({super.key});
@@ -12,7 +13,12 @@ class CustomerView extends StatefulWidget {
 
 class _CustomerViewState extends State<CustomerView> {
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _tabs = ['ទាំងអស់', 'VIP', 'ថ្មី', 'អសកម្ម'];
+  List<String> get _tabs => [
+        'tab_all'.tr,
+        'tab_vip'.tr,
+        'tab_new'.tr,
+        'tab_inactive'.tr,
+      ];
 
   CustomerController get controller => Get.isRegistered<CustomerController>()
       ? Get.find<CustomerController>()
@@ -38,6 +44,7 @@ class _CustomerViewState extends State<CustomerView> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      LanguageController.to.currentLocale.value;
       final customerState = controller.state;
 
       return Scaffold(
@@ -108,9 +115,9 @@ class _CustomerViewState extends State<CustomerView> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'អតិថិជន',
-                style: TextStyle(
+              Text(
+                'customer_title'.tr,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -118,7 +125,7 @@ class _CustomerViewState extends State<CustomerView> {
               ),
               const SizedBox(height: 4),
               Text(
-                'គ្រប់គ្រងព័ត៌មានអតិថិជន (${state.allCustomers.length})',
+                '${'manage_customers'.tr} (${state.allCustomers.length})',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
@@ -127,7 +134,7 @@ class _CustomerViewState extends State<CustomerView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.black87),
-                tooltip: 'ទាញយកទិន្នន័យឡើងវិញ',
+                tooltip: 'retry'.tr,
                 onPressed: () {
                   controller.loadCustomers();
                 },
@@ -140,7 +147,7 @@ class _CustomerViewState extends State<CustomerView> {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.add, color: Colors.white),
-                  tooltip: 'បន្ថែមអតិថិជនថ្មី',
+                  tooltip: 'add_customer'.tr,
                   onPressed: () => _showAddCustomerSheet(context),
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(8),
@@ -161,7 +168,7 @@ class _CustomerViewState extends State<CustomerView> {
           Expanded(
             child: _buildStatCard(
               Icons.people_outline,
-              'សរុប',
+              'total'.tr,
               state.totalCount.toString(),
               Colors.green,
             ),
@@ -170,7 +177,7 @@ class _CustomerViewState extends State<CustomerView> {
           Expanded(
             child: _buildStatCard(
               Icons.person_add_alt_1_outlined,
-              'ថ្មី',
+              'tab_new'.tr,
               state.newCount.toString(),
               Colors.blue,
             ),
@@ -179,7 +186,7 @@ class _CustomerViewState extends State<CustomerView> {
           Expanded(
             child: _buildStatCard(
               Icons.workspace_premium_outlined,
-              'VIP',
+              'tab_vip'.tr,
               state.vipCount.toString(),
               Colors.orange,
             ),
@@ -188,7 +195,7 @@ class _CustomerViewState extends State<CustomerView> {
           Expanded(
             child: _buildStatCard(
               Icons.person_off_outlined,
-              'អសកម្ម',
+              'tab_inactive'.tr,
               state.inactiveCount.toString(),
               Colors.grey,
             ),
@@ -241,7 +248,7 @@ class _CustomerViewState extends State<CustomerView> {
             ),
           ),
           Text(
-            'អតិថិជន',
+            'customer_stat_unit'.tr,
             style: TextStyle(fontSize: 10, color: Colors.grey[400]),
           ),
         ],
@@ -264,7 +271,7 @@ class _CustomerViewState extends State<CustomerView> {
             controller.setSearchQuery(val);
           },
           decoration: InputDecoration(
-            hintText: 'ស្វែងរកដោយឈ្មោះ លេខទូរស័ព្ទ ឬអ៊ីមែល...',
+            hintText: 'search_customer_hint'.tr,
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
             prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
             suffixIcon: _searchController.text.isNotEmpty
@@ -345,7 +352,7 @@ class _CustomerViewState extends State<CustomerView> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'ទាំងអស់ (${state.filteredCustomers.length})',
+                  '${'tab_all'.tr} (${state.filteredCustomers.length})',
                   style: TextStyle(color: Colors.grey[700], fontSize: 13),
                 ),
               ],
@@ -356,7 +363,7 @@ class _CustomerViewState extends State<CustomerView> {
               Icon(Icons.swap_vert, size: 18, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                'ថ្មីបំផុត',
+                'tab_new'.tr,
                 style: TextStyle(color: Colors.grey[700], fontSize: 13),
               ),
             ],
@@ -372,7 +379,7 @@ class _CustomerViewState extends State<CustomerView> {
         final customer = customers[index];
         final avatarColor = _avatarColors[customer.id % _avatarColors.length];
 
-        String dateStr = 'មិនទាន់មាន';
+        String dateStr = 'none_yet'.tr;
         if (customer.createdAt != null) {
           final dt = customer.createdAt!;
           dateStr =
@@ -436,7 +443,7 @@ class _CustomerViewState extends State<CustomerView> {
                             child: Text(
                               customer.phone?.isNotEmpty == true
                                   ? customer.phone!
-                                  : 'គ្មានលេខទូរស័ព្ទ',
+                                  : 'none_yet'.tr,
                               style: TextStyle(
                                 color: Colors.grey[500],
                                 fontSize: 12,
@@ -449,11 +456,11 @@ class _CustomerViewState extends State<CustomerView> {
                       ),
                       if (customer.email != null && customer.email!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.only(top: 2.0),
                           child: Row(
                             children: [
                               Icon(Icons.email_outlined,
-                                  size: 11, color: Colors.blue[300]),
+                                  size: 12, color: Colors.grey[400]),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -478,24 +485,19 @@ class _CustomerViewState extends State<CustomerView> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'ការប្រើប្រាស់',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
                         '\$${customer.totalSpent.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Color(0xFF4CAF50),
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 14,
+                          color: Color(0xFF2E7D32),
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Icon(
-                            Icons.calendar_today,
+                            Icons.calendar_today_outlined,
                             size: 10,
                             color: Colors.grey[400],
                           ),
@@ -531,9 +533,9 @@ class _CustomerViewState extends State<CustomerView> {
           children: [
             Icon(Icons.person_search_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            const Text(
-              'រកមិនឃើញអតិថិជនឡើយ',
-              style: TextStyle(
+            Text(
+              'no_customers_found'.tr,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -541,7 +543,7 @@ class _CustomerViewState extends State<CustomerView> {
             ),
             const SizedBox(height: 8),
             Text(
-              'សូមចុចប៊ូតុង "+" ខាងលើ ដើម្បីបន្ថែមអតិថិជនថ្មី',
+              'add_customer'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
@@ -549,9 +551,9 @@ class _CustomerViewState extends State<CustomerView> {
             ElevatedButton.icon(
               onPressed: () => _showAddCustomerSheet(context),
               icon: const Icon(Icons.add, color: Colors.white, size: 18),
-              label: const Text(
-                'បន្ថែមអតិថិជន',
-                style: TextStyle(color: Colors.white),
+              label: Text(
+                'add_customer'.tr,
+                style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
@@ -588,7 +590,7 @@ class _CustomerViewState extends State<CustomerView> {
                 controller.loadCustomers();
               },
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('ព្យាយាមម្តងទៀត'),
+              label: Text('retry'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
                 foregroundColor: Colors.white,
@@ -651,9 +653,9 @@ class _CustomerViewState extends State<CustomerView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'បន្ថែមអតិថិជនថ្មី',
-                            style: TextStyle(
+                          Text(
+                            'add_customer'.tr,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
@@ -669,12 +671,12 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: nameController,
-                        label: 'ឈ្មោះអតិថិជន *',
+                        label: '${'customer_name'.tr} *',
                         hint: 'ឧទាហរណ៍៖ សុខ ជា',
                         icon: Icons.person_outline,
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
-                            return 'សូមបញ្ចូលឈ្មោះអតិថិជន';
+                            return 'error_enter_name'.tr;
                           }
                           return null;
                         },
@@ -682,7 +684,7 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: phoneController,
-                        label: 'លេខទូរស័ព្ទ',
+                        label: 'phone'.tr,
                         hint: 'ឧទាហរណ៍៖ 012 345 678',
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
@@ -690,7 +692,7 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: emailController,
-                        label: 'អ៊ីមែល',
+                        label: 'email'.tr,
                         hint: 'ឧទាហរណ៍៖ user@example.com',
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
@@ -698,7 +700,7 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: addressController,
-                        label: 'អាសយដ្ឋាន',
+                        label: 'address'.tr,
                         hint: 'រាជធានីភ្នំពេញ...',
                         icon: Icons.location_on_outlined,
                         maxLines: 2,
@@ -738,15 +740,15 @@ class _CustomerViewState extends State<CustomerView> {
                                     Navigator.pop(bottomSheetContext);
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('បានបន្ថែមអតិថិជនជោគជ័យ'),
-                                        backgroundColor: Color(0xFF4CAF50),
+                                      SnackBar(
+                                        content: Text('customer_saved'.tr),
+                                        backgroundColor: const Color(0xFF4CAF50),
                                       ),
                                     );
                                   } else {
                                     if (!context.mounted) return;
                                     final err = controller.errorMessage.value ??
-                                        'បរាជ័យក្នុងការបន្ថែមអតិថិជន';
+                                        'error'.tr;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(err),
@@ -770,9 +772,9 @@ class _CustomerViewState extends State<CustomerView> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'រក្សាទុកអតិថិជន',
-                                  style: TextStyle(
+                              : Text(
+                                  'save'.tr,
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -817,13 +819,13 @@ class _CustomerViewState extends State<CustomerView> {
                   subtitle: Text(
                     customer.phone?.isNotEmpty == true
                         ? customer.phone!
-                        : (customer.email ?? 'គ្មានលេខទូរស័ព្ទ'),
+                        : (customer.email ?? 'none_yet'.tr),
                   ),
                 ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.edit_outlined, color: Colors.blue),
-                  title: const Text('កែប្រែព័ត៌មានអតិថិជន'),
+                  title: Text('edit_customer'.tr),
                   onTap: () {
                     Navigator.pop(bottomSheetCtx);
                     _showEditCustomerSheet(context, customer);
@@ -831,8 +833,8 @@ class _CustomerViewState extends State<CustomerView> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: const Text('លុបអតិថិជន',
-                      style: TextStyle(color: Colors.red)),
+                  title: Text('delete_customer'.tr,
+                      style: const TextStyle(color: Colors.red)),
                   onTap: () {
                     Navigator.pop(bottomSheetCtx);
                     _showDeleteConfirmDialog(context, customer);
@@ -893,9 +895,9 @@ class _CustomerViewState extends State<CustomerView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'កែប្រែព័ត៌មានអតិថិជន',
-                            style: TextStyle(
+                          Text(
+                            'edit_customer'.tr,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
@@ -911,11 +913,11 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: nameController,
-                        label: 'ឈ្មោះអតិថិជន *',
+                        label: '${'customer_name'.tr} *',
                         icon: Icons.person_outline,
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
-                            return 'សូមបញ្ចូលឈ្មោះអតិថិជន';
+                            return 'error_enter_name'.tr;
                           }
                           return null;
                         },
@@ -923,21 +925,21 @@ class _CustomerViewState extends State<CustomerView> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: phoneController,
-                        label: 'លេខទូរស័ព្ទ',
+                        label: 'phone'.tr,
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: emailController,
-                        label: 'អ៊ីមែល',
+                        label: 'email'.tr,
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
                         controller: addressController,
-                        label: 'អាសយដ្ឋាន',
+                        label: 'address'.tr,
                         icon: Icons.location_on_outlined,
                         maxLines: 2,
                       ),
@@ -976,16 +978,15 @@ class _CustomerViewState extends State<CustomerView> {
                                     Navigator.pop(bottomSheetContext);
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'បានកែប្រែព័ត៌មានអតិថិជនជោគជ័យ'),
-                                        backgroundColor: Color(0xFF4CAF50),
+                                      SnackBar(
+                                        content: Text('customer_saved'.tr),
+                                        backgroundColor: const Color(0xFF4CAF50),
                                       ),
                                     );
                                   } else {
                                     if (!context.mounted) return;
                                     final err = controller.errorMessage.value ??
-                                        'បរាជ័យក្នុងការកែប្រែព័ត៌មានអតិថិជន';
+                                        'error'.tr;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(err),
@@ -1009,9 +1010,9 @@ class _CustomerViewState extends State<CustomerView> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'រក្សាទុកការកែប្រែ',
-                                  style: TextStyle(
+                              : Text(
+                                  'save'.tr,
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -1035,12 +1036,12 @@ class _CustomerViewState extends State<CustomerView> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('បញ្ជាក់ការលុប'),
-          content: Text('តើអ្នកពិតជាចង់លុបអតិថិជន "${customer.name}" មែនទេ?'),
+          title: Text('delete_customer'.tr),
+          content: Text('${'delete_customer_confirm'.tr} ("${customer.name}")'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
+              child: Text('cancel'.tr, style: const TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -1055,14 +1056,14 @@ class _CustomerViewState extends State<CustomerView> {
                 if (!context.mounted) return;
                 if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('បានលុបអតិថិជនជោគជ័យ'),
+                    SnackBar(
+                      content: Text('customer_deleted'.tr),
                       backgroundColor: Colors.green,
                     ),
                   );
                 } else {
                   final err = controller.errorMessage.value ??
-                      'បរាជ័យក្នុងការលុបអតិថិជន';
+                      'error'.tr;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(err),
@@ -1071,7 +1072,7 @@ class _CustomerViewState extends State<CustomerView> {
                   );
                 }
               },
-              child: const Text('លុប'),
+              child: Text('delete'.tr),
             ),
           ],
         );

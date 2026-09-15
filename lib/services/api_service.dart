@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../features/customer/customer_models/customer_model.dart';
 import '../features/supplier/supplier_models/supplier_model.dart';
@@ -33,6 +34,11 @@ class ApiService {
   Map<String, dynamic>? _currentUser;
   Map<String, dynamic>? _currentBusiness;
 
+  static const String _tokenStorageKey = 'auth_token';
+  static const String _businessIdStorageKey = 'current_business_id';
+  static const String _userStorageKey = 'cached_user_data';
+  static const String _businessStorageKey = 'cached_business_data';
+
   String? get token => _token;
   int? get currentBusinessId => _currentBusinessId;
   Map<String, dynamic>? get currentUser => _currentUser;
@@ -51,6 +57,138 @@ class ApiService {
     _currentBusiness = business;
     if (business != null && business['id'] != null) {
       _currentBusinessId = business['id'] as int?;
+    }
+  }
+
+  /// Persists full user & business session to SharedPreferences.
+  Future<void> saveSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_token != null) {
+        await prefs.setString(_tokenStorageKey, _token!);
+      }
+      if (_currentBusinessId != null) {
+        await prefs.setInt(_businessIdStorageKey, _currentBusinessId!);
+      }
+      if (_currentUser != null) {
+        await prefs.setString(_userStorageKey, jsonEncode(_currentUser));
+      }
+      if (_currentBusiness != null) {
+        await prefs.setString(_businessStorageKey, jsonEncode(_currentBusiness));
+      }
+    } catch (e) {
+      debugPrint('Error saving session: $e');
+    }
+  }
+
+  /// Quick guest/demo session for offline testing
+  Future<void> loginAsGuest() async {
+    _token = 'guest_demo_token';
+    _currentUser = {
+      'id': 1,
+      'name': 'គណនីសាកល្បង (Test Account)',
+      'email': 'guest@pos.kh',
+      'role': 'owner',
+    };
+    _currentBusiness = {
+      'id': 1,
+      'name': 'ហាងគំរូ ABC',
+      'currency': 'USD',
+      'phone': '012 345 678',
+    };
+    _currentBusinessId = 1;
+    await saveSession();
+  }
+
+  /// Attempts to automatically restore a user session from SharedPreferences.
+  /// Loads cached profile and business instantly (0ms delay), then verifies in background.
+  Future<bool> tryAutoLogin() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedToken = prefs.getString(_tokenStorageKey);
+      if (savedToken == null || savedToken.isEmpty) {
+        return false;
+      }
+
+      _token = savedToken;
+      _currentBusinessId = prefs.getInt(_businessIdStorageKey);
+
+      // Instantly restore cached user info from previous login
+      final cachedUserStr = prefs.getString(_userStorageKey);
+      if (cachedUserStr != null && cachedUserStr.isNotEmpty) {
+        try {
+          _currentUser = jsonDecode(cachedUserStr) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+
+      // Instantly restore cached business info from previous login
+      final cachedBizStr = prefs.getString(_businessStorageKey);
+      if (cachedBizStr != null && cachedBizStr.isNotEmpty) {
+        try {
+          _currentBusiness = jsonDecode(cachedBizStr) as Map<String, dynamic>;
+          if (_currentBusiness != null && _currentBusiness!['id'] != null) {
+            _currentBusinessId = _currentBusiness!['id'] as int?;
+          }
+        } catch (_) {}
+      }
+
+      // Fallback defaults if cache was empty
+      _currentUser ??= {
+        'id': 1,
+        'name': 'Business User',
+        'email': 'user@business.kh',
+      };
+      _currentBusiness ??= {
+        'id': _currentBusinessId ?? 1,
+        'name': 'ABC Store',
+        'currency': 'USD',
+      };
+
+      // Background silent verification & synchronization
+      _syncSessionInBackground();
+
+      return true;
+    } catch (e) {
+      debugPrint('Auto-login exception: $e');
+      return _token != null && _token!.isNotEmpty;
+    }
+  }
+
+  /// Silently update profile and businesses in the background without blocking UI
+  void _syncSessionInBackground() {
+    if (_token == null || _token == 'guest_demo_token') return;
+
+    fetchMe().then((meResponse) {
+      if (meResponse.success && meResponse.data != null) {
+        saveSession();
+      } else if (meResponse.statusCode == 401 || meResponse.statusCode == 403) {
+        // Token was revoked or expired on backend
+        logout();
+      }
+    }).catchError((_) {});
+
+    fetchUserBusinesses().then((bizResponse) {
+      if (bizResponse.success && _currentBusiness != null) {
+        saveSession();
+      }
+    }).catchError((_) {});
+  }
+
+  /// Clears stored credentials and resets in-memory authentication state.
+  Future<void> logout() async {
+    _token = null;
+    _currentUser = null;
+    _currentBusiness = null;
+    _currentBusinessId = null;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tokenStorageKey);
+      await prefs.remove(_businessIdStorageKey);
+      await prefs.remove(_userStorageKey);
+      await prefs.remove(_businessStorageKey);
+    } catch (e) {
+      debugPrint('Logout clear storage error: $e');
     }
   }
 
@@ -93,6 +231,9 @@ class ApiService {
         // Auto-fetch user details and businesses
         await fetchMe();
         await fetchUserBusinesses();
+
+        // Save complete session (token, user, business, businessId) to SharedPreferences
+        await saveSession();
 
         return ApiResponse(
           success: true,

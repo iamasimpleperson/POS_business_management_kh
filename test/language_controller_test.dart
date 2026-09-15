@@ -6,6 +6,7 @@ import 'package:business_management_kh/core/localizations/app_translations.dart'
 import 'package:business_management_kh/core/localizations/language_controller.dart';
 import 'package:business_management_kh/core/localizations/translations/km_kh.dart';
 import 'package:business_management_kh/core/localizations/translations/en_us.dart';
+import 'package:business_management_kh/features/home/home_model/home_model.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +66,41 @@ void main() {
       'sold_qty',
       'items_low_stock',
       'default_city',
+      // Customers
+      'customer_title',
+      'manage_customers',
+      'add_customer',
+      'edit_customer',
+      'delete_customer',
+      'tab_all',
+      'tab_vip',
+      'tab_new',
+      'tab_inactive',
+      // Debts
+      'debt_title',
+      'search_debt_hint',
+      'debt_remaining',
+      'debt_paid',
+      'debt_unpaid',
+      'debt_completed',
+      'repay_debt',
+      // Expenses
+      'expense_title',
+      'search_expense_hint',
+      'total_expense',
+      'new_expense',
+      'expense_category_label',
+      // Reports
+      'reports_title',
+      'period_today',
+      'period_last_7_days',
+      'period_this_month',
+      'tab_profit_loss',
+      'tab_sales',
+      'tab_inventory',
+      'tab_expenses',
+      'net_profit',
+      'total_stock_value',
     ];
 
     for (final key in commonKeys) {
@@ -95,5 +131,30 @@ void main() {
     expect(controller.isEnglish, true);
     expect(controller.currentLanguageName, 'English');
     expect(controller.currentFlag, '🇬🇧');
+  });
+
+  test('Models localization getters translate correctly', () {
+    Get.addTranslations(AppTranslations().keys);
+    Get.locale = const Locale('km', 'KH');
+
+    final statKh = StatModel(
+      title: 'orders',
+      amount: 'មិនទាន់មាន',
+      percentageText: 'orders_unit',
+      isPositive: true,
+      icon: Icons.shopping_bag,
+      color: Colors.blue,
+    );
+    expect(statKh.localizedTitle, 'ការបញ្ជាទិញ');
+    expect(statKh.localizedAmount, 'មិនទាន់មាន');
+
+    final shopKh = ShopModel(name: 'ABC', location: 'ភ្នំពេញ');
+    expect(shopKh.localizedLocation, 'ភ្នំពេញ');
+
+    // Switch to English
+    Get.locale = const Locale('en', 'US');
+    expect(statKh.localizedTitle, 'Orders');
+    expect(statKh.localizedAmount, 'None yet');
+    expect(shopKh.localizedLocation, 'Phnom Penh');
   });
 }

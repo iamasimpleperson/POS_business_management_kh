@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
-import 'package:business_management_kh/routes/appRoute.dart';
+import 'package:business_management_kh/routes/app_route.dart';
 import 'package:business_management_kh/core/localizations/app_translations.dart';
 import 'package:business_management_kh/core/localizations/language_controller.dart';
+import 'package:business_management_kh/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final languageController = Get.put(LanguageController(), permanent: true);
   await languageController.initLanguage();
+
+  final isLoggedIn = await ApiService.instance.tryAutoLogin();
+  AppRoute.createRouter(initialLocation: isLoggedIn ? '/home' : '/login');
+
   runApp(const MyApp());
 }
 

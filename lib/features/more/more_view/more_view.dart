@@ -2,6 +2,7 @@ import 'package:business_management_kh/features/home/controllers/home_controller
 import 'package:business_management_kh/features/home/home_model/home_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'edit_store_info_view.dart';
 import '../../supplier/supplier_views/supplier_view.dart';
 import '../../purchase/purchase_views/purchase_view.dart';
@@ -544,7 +545,13 @@ class _MoreViewState extends State<MoreView> {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await ApiService.instance.logout();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                },
                 child: Text(
                   'btn_logout'.tr,
                   style: const TextStyle(color: Colors.red),

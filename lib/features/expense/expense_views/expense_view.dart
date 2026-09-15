@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../expense_controllers/expense_controller.dart';
 import '../expense_models/expense_model.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class ExpenseView extends StatelessWidget {
   const ExpenseView({super.key});
@@ -13,9 +14,9 @@ class ExpenseView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          'គ្រប់គ្រងការចំណាយ',
-          style: TextStyle(
+        title: Text(
+          'expense_title'.tr,
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -27,11 +28,13 @@ class ExpenseView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'retry'.tr,
             onPressed: () => controller.loadExpenses(),
           ),
         ],
       ),
       body: Obx(() {
+        LanguageController.to.currentLocale.value;
         if (controller.isLoading.value) {
           return const Center(
             child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
@@ -52,7 +55,7 @@ class ExpenseView extends StatelessWidget {
               child: TextField(
                 onChanged: (val) => controller.searchQuery.value = val,
                 decoration: InputDecoration(
-                  hintText: 'ស្វែងរកការចំណាយ...',
+                  hintText: 'search_expense_hint'.tr,
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
                   filled: true,
@@ -81,7 +84,7 @@ class ExpenseView extends StatelessWidget {
                               size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 12),
                           Text(
-                            'មិនទាន់មានការចំណាយនៅឡើយទេ',
+                            'no_expense_data'.tr,
                             style: TextStyle(color: Colors.grey[600], fontSize: 14),
                           ),
                         ],
@@ -107,9 +110,9 @@ class ExpenseView extends StatelessWidget {
         onPressed: () => _showAddExpenseDialog(context, controller),
         backgroundColor: const Color(0xFF2E7D32),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'ចំណាយថ្មី',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        label: Text(
+          'new_expense'.tr,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -140,9 +143,9 @@ class ExpenseView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ចំណាយសរុប',
-                style: TextStyle(
+              Text(
+                'total_expense'.tr,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -187,7 +190,7 @@ class ExpenseView extends StatelessWidget {
           Obx(() {
             final isSelected = controller.selectedCategory.value == null;
             return ChoiceChip(
-              label: const Text('ទាំងអស់'),
+              label: Text('tab_all'.tr),
               selected: isSelected,
               onSelected: (_) => controller.selectedCategory.value = null,
               selectedColor: const Color(0xFF2E7D32),
@@ -232,7 +235,7 @@ class ExpenseView extends StatelessWidget {
           // Add Category Button
           ActionChip(
             avatar: const Icon(Icons.add, size: 16, color: Color(0xFF2E7D32)),
-            label: const Text('បន្ថែមប្រភេទ', style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32))),
+            label: Text('add'.tr, style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32))),
             backgroundColor: Colors.white,
             side: const BorderSide(color: Color(0xFF2E7D32), style: BorderStyle.solid),
             onPressed: () => _showAddCategoryDialog(context, controller),
@@ -343,14 +346,14 @@ class ExpenseView extends StatelessWidget {
                   color: Color(0xFFE53935),
                 ),
               ),
-              IconButton(
+                IconButton(
                 icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18),
                 onPressed: () {
                   Get.defaultDialog(
-                    title: 'លុបការចំណាយ',
-                    middleText: 'តើអ្នកប្រាកដជាចង់លុបចំណាយ "${item.title}" នេះមែនទេ?',
-                    textConfirm: 'លុប',
-                    textCancel: 'បោះបង់',
+                    title: 'delete'.tr,
+                    middleText: '${'confirm'.tr} "${item.title}"?',
+                    textConfirm: 'delete'.tr,
+                    textCancel: 'cancel'.tr,
                     confirmTextColor: Colors.white,
                     buttonColor: Colors.red,
                     onConfirm: () async {
@@ -400,9 +403,9 @@ class ExpenseView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'កត់ត្រាការចំណាយថ្មី',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    Text(
+                      'new_expense'.tr,
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -416,7 +419,7 @@ class ExpenseView extends StatelessWidget {
                 TextField(
                   controller: titleController,
                   decoration: InputDecoration(
-                    labelText: 'ឈ្មោះការចំណាយ (ឧ. ថ្លៃជួលតូប, ទឹកភ្លើង)',
+                    labelText: 'expense_title_label'.tr,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -427,7 +430,7 @@ class ExpenseView extends StatelessWidget {
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'ទឹកប្រាក់ចំណាយ (\$)',
+                    labelText: '${'expense_amount_label'.tr} (\$)',
                     prefixText: '\$ ',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -438,7 +441,7 @@ class ExpenseView extends StatelessWidget {
                 DropdownButtonFormField<ExpenseCategoryModel>(
                   initialValue: selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'ប្រភេទចំណាយ',
+                    labelText: 'expense_category_label'.tr,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   items: controller.categories.map((c) {
@@ -471,7 +474,7 @@ class ExpenseView extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'កាលបរិច្ឆេទ: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                          '${'expense_date_label'.tr}: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                           style: const TextStyle(fontSize: 14),
                         ),
                         const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
@@ -485,7 +488,7 @@ class ExpenseView extends StatelessWidget {
                 TextField(
                   controller: noteController,
                   decoration: InputDecoration(
-                    labelText: 'ចំណាំបន្ថែម (ស្រេចចិត្ត)',
+                    labelText: 'notes'.tr,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -508,9 +511,9 @@ class ExpenseView extends StatelessWidget {
 
                       if (title.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('សូមបញ្ចូលឈ្មោះការចំណាយ'),
-                            backgroundColor: Color(0xFFE53935),
+                          SnackBar(
+                            content: Text('error'.tr),
+                            backgroundColor: const Color(0xFFE53935),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -518,9 +521,9 @@ class ExpenseView extends StatelessWidget {
                       }
                       if (amount == null || amount <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('សូមបញ្ចូលចំនួនទឹកប្រាក់ឱ្យបានត្រឹមត្រូវ'),
-                            backgroundColor: Color(0xFFE53935),
+                          SnackBar(
+                            content: Text('enter_valid_amount'.tr),
+                            backgroundColor: const Color(0xFFE53935),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -552,9 +555,9 @@ class ExpenseView extends StatelessWidget {
                         );
                       }
                     },
-                    child: const Text(
-                      'រក្សាទុកការចំណាយ',
-                      style: TextStyle(
+                    child: Text(
+                      'save'.tr,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -573,15 +576,15 @@ class ExpenseView extends StatelessWidget {
   void _showAddCategoryDialog(BuildContext context, ExpenseController controller) {
     final catController = TextEditingController();
     Get.defaultDialog(
-      title: 'បង្កើតប្រភេទចំណាយថ្មី',
+      title: 'expense_category_label'.tr,
       content: TextField(
         controller: catController,
-        decoration: const InputDecoration(
-          hintText: 'ឈ្មោះប្រភេទ (ឧ. ទឹកភ្លើង, ជួលតូប...)',
+        decoration: InputDecoration(
+          hintText: 'expense_category_label'.tr,
         ),
       ),
-      textConfirm: 'បង្កើត',
-      textCancel: 'បោះបង់',
+      textConfirm: 'save'.tr,
+      textCancel: 'cancel'.tr,
       confirmTextColor: Colors.white,
       buttonColor: const Color(0xFF2E7D32),
       onConfirm: () async {

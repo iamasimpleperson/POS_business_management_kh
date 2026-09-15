@@ -42,8 +42,8 @@ class LanguageController extends GetxController {
 
   Future<void> changeLanguage(String langCode) async {
     final newLocale = langCode == 'en' ? englishLocale : khmerLocale;
-    currentLocale.value = newLocale;
     await Get.updateLocale(newLocale);
+    currentLocale.value = newLocale;
 
     try {
       final prefs = await SharedPreferences.getInstance();

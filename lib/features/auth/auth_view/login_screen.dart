@@ -20,7 +20,10 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -166,13 +169,14 @@ class LoginScreen extends StatelessWidget {
                           : () async {
                               final success = await controller.login();
                               if (success && context.mounted) {
-                                context.go(
-                                  '/home',
-                                );
+                                context.go('/home');
                               } else if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(controller.errorMessage.value ?? 'បរាជ័យក្នុងការចូលគណនី'),
+                                    content: Text(
+                                      controller.errorMessage.value ??
+                                          'បរាជ័យក្នុងការចូលគណនី',
+                                    ),
                                     backgroundColor: Colors.red[700],
                                   ),
                                 );
@@ -238,18 +242,18 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 20),
-                    GestureDetector(
-                      onTap: () {
-                        context.push('/home');
-                      },
-                      child: const Text(
-                        'ចូលតេស្ត',
-                        style: TextStyle(
-                          color: Color(0xFF2E7D32),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    // GestureDetector(
+                    //   onTap: () {
+                    //     context.push('/home');
+                    //   },
+                    //   child: const Text(
+                    //     'ចូលតេស្ត',
+                    //     style: TextStyle(
+                    //       color: Color(0xFF2E7D32),
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],

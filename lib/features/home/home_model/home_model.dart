@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ShopModel {
   final String name;
@@ -6,6 +7,8 @@ class ShopModel {
   final String logoUrl;
 
   ShopModel({required this.name, required this.location, this.logoUrl = ''});
+
+  String get localizedLocation => location.tr;
 }
 
 class StatModel {
@@ -24,6 +27,11 @@ class StatModel {
     required this.icon,
     required this.color,
   });
+
+  String get localizedTitle => title.tr;
+  String get localizedAmount =>
+      amount == 'មិនទាន់មាន' ? 'none_yet'.tr : amount.tr;
+  String get localizedPercentageText => percentageText.tr;
 }
 
 class QuickActionModel {
@@ -38,6 +46,8 @@ class QuickActionModel {
     required this.color,
     required this.bgColor,
   });
+
+  String get localizedTitle => title.tr;
 }
 
 class HomeDataModel {

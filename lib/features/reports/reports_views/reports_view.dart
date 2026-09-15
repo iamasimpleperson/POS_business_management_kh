@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../reports_controllers/report_controller.dart';
+import '../../../core/localizations/language_controller.dart';
 
 class ReportsView extends StatelessWidget {
   const ReportsView({super.key});
@@ -12,9 +13,9 @@ class ReportsView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          'របាយការណ៍អាជីវកម្ម',
-          style: TextStyle(
+        title: Text(
+          'reports_title'.tr,
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -26,11 +27,13 @@ class ReportsView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'retry'.tr,
             onPressed: () => controller.loadAllReports(),
           ),
         ],
       ),
       body: Obx(() {
+        LanguageController.to.currentLocale.value;
         return Column(
           children: [
             // Period Selector (Today, Week, Month)
@@ -60,7 +63,7 @@ class ReportsView extends StatelessWidget {
   }
 
   Widget _buildPeriodSelector(ReportController controller) {
-    final periods = ['ថ្ងៃនេះ', '៧ថ្ងៃចុងក្រោយ', 'ខែនេះ'];
+    final periods = ['period_today'.tr, 'period_last_7_days'.tr, 'period_this_month'.tr];
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
@@ -98,7 +101,7 @@ class ReportsView extends StatelessWidget {
   }
 
   Widget _buildTabSelector(ReportController controller) {
-    final tabs = ['ចំណេញ/ខាត', 'ការលក់', 'តម្លៃស្តុក', 'ការចំណាយ'];
+    final tabs = ['tab_profit_loss'.tr, 'tab_sales'.tr, 'tab_inventory'.tr, 'tab_expenses'.tr];
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.only(bottom: 8),
@@ -182,9 +185,9 @@ class ReportsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ប្រាក់ចំណេញសុទ្ធ (Net Profit)',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+              Text(
+                'net_profit'.tr,
+                style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               Text(
@@ -197,7 +200,7 @@ class ReportsView extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                isProfitable ? 'អាជីវកម្មដំណើរការល្អមានផលចំណេញ' : 'ចំណាយលើសចំណូល',
+                isProfitable ? 'profit_good'.tr : 'loss_warning'.tr,
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
@@ -216,19 +219,19 @@ class ReportsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ការគណនាសង្ខេប (P&L Breakdown)',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              Text(
+                'pnl_breakdown'.tr,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               const Divider(height: 24),
-              _buildRowItem('ចំណូលលក់សរុប (+)', '\$${totalSales.toStringAsFixed(2)}', Colors.green[700]!),
+              _buildRowItem('${'total_revenue'.tr} (+)', '\$${totalSales.toStringAsFixed(2)}', Colors.green[700]!),
               const SizedBox(height: 12),
-              _buildRowItem('ថ្លៃដើមទំនិញ COGS (-)', '-\$${totalCogs.toStringAsFixed(2)}', Colors.orange[800]!),
+              _buildRowItem('${'cost_of_goods'.tr} (-)', '-\$${totalCogs.toStringAsFixed(2)}', Colors.orange[800]!),
               const SizedBox(height: 12),
-              _buildRowItem('ការចំណាយទូទៅ (-)', '-\$${totalExpenses.toStringAsFixed(2)}', Colors.red[700]!),
+              _buildRowItem('${'total_expense'.tr} (-)', '-\$${totalExpenses.toStringAsFixed(2)}', Colors.red[700]!),
               const Divider(height: 24, thickness: 1.2),
               _buildRowItem(
-                'ចំណេញសុទ្ធ =',
+                '${'net_profit'.tr} =',
                 '\$${netProfit.toStringAsFixed(2)}',
                 isProfitable ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
                 isBold: true,
@@ -253,7 +256,7 @@ class ReportsView extends StatelessWidget {
           children: [
             Expanded(
               child: _buildMetricCard(
-                'ចំណូលលក់',
+                'total_revenue'.tr,
                 '\$${totalSales.toStringAsFixed(2)}',
                 Icons.attach_money_rounded,
                 Colors.blue,
@@ -262,8 +265,8 @@ class ReportsView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                'ចំនួនប្រតិបត្តិការ',
-                '$totalTx ដង',
+                'total_sales_count'.tr,
+                '$totalTx ${'transactions_count'.tr}',
                 Icons.receipt_long_rounded,
                 Colors.purple,
               ),
@@ -283,16 +286,16 @@ class ReportsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ទំនិញលក់ដាច់បំផុត (Top Selling Products)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              Text(
+                'top_products'.tr,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 14),
               if (topProducts.isEmpty)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text('គ្មានទិន្នន័យទំនិញលក់ក្នុងកាលបរិច្ឆេទនេះទេ',
+                    child: Text('no_report_data'.tr,
                         style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                   ),
                 )
@@ -310,7 +313,7 @@ class ReportsView extends StatelessWidget {
                               Text(item.productName,
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                               const SizedBox(height: 2),
-                              Text('លក់បាន ${item.totalQuantitySold.toInt()} ឯកតា',
+                              Text('${'sold_qty'.tr} ${item.totalQuantitySold.toInt()} ${'units_sold'.tr}',
                                   style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                             ],
                           ),
@@ -343,7 +346,7 @@ class ReportsView extends StatelessWidget {
           children: [
             Expanded(
               child: _buildMetricCard(
-                'តម្លៃស្តុកសរុប',
+                'total_stock_value'.tr,
                 '\$${stockVal.toStringAsFixed(2)}',
                 Icons.inventory_2_outlined,
                 Colors.teal,
@@ -352,8 +355,8 @@ class ReportsView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                'មុខទំនិញសរុប',
-                '$totalProds មុខ',
+                'total_stock_items'.tr,
+                '$totalProds',
                 Icons.category_outlined,
                 Colors.indigo,
               ),
@@ -375,8 +378,8 @@ class ReportsView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('ទំនិញជិតអស់ស្តុក', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  Text('${lowStock.length} មុខ', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text('low_stock_warning'.tr, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text('${lowStock.length}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
                 ],
               ),
               const SizedBox(height: 14),
@@ -384,7 +387,7 @@ class ReportsView extends StatelessWidget {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text('ស្តុកទំនិញទាំងអស់មានបរិមាណគ្រប់គ្រាន់',
+                    child: Text('no_report_data'.tr,
                         style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                   ),
                 )
@@ -401,7 +404,7 @@ class ReportsView extends StatelessWidget {
                             children: [
                               Text(item.productName,
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              Text('តម្លៃដើម: \$${item.costPrice.toStringAsFixed(2)}',
+                              Text('${'cost_of_goods'.tr}: \$${item.costPrice.toStringAsFixed(2)}',
                                   style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                             ],
                           ),
@@ -413,7 +416,7 @@ class ReportsView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'សល់ ${item.currentStock.toInt()}',
+                            '${'remaining_stock'.tr} ${item.currentStock.toInt()}',
                             style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                         ),
@@ -437,7 +440,7 @@ class ReportsView extends StatelessWidget {
     return Column(
       children: [
         _buildMetricCard(
-          'ការចំណាយសរុបក្នុងកាលបរិច្ឆេទនេះ',
+          'total_expense'.tr,
           '\$${totalExp.toStringAsFixed(2)}',
           Icons.trending_down_rounded,
           Colors.red,
@@ -454,13 +457,13 @@ class ReportsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('ការចំណាយតាមប្រភេទ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('expense_by_category'.tr, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 14),
               if (byCat.isEmpty)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text('គ្មានទិន្នន័យចំណាយក្នុងកាលបរិច្ឆេទនេះទេ',
+                    child: Text('no_report_data'.tr,
                         style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                   ),
                 )
